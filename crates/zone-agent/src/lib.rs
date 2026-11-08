@@ -370,12 +370,27 @@ async fn task_handler(
             },
         };
 
+        let nav_failed = !action_res.success;
+        let fail_msg = action_res.message.clone();
+
         steps.push(TaskStep {
             step: 1,
             thought,
             action,
             result: action_res,
         });
+
+        if nav_failed {
+            let response = TaskResponse {
+                task_id,
+                prompt: payload.prompt,
+                status: "failed".to_string(),
+                steps,
+                summary: format!("Task aborted: {}", fail_msg),
+            };
+            state.tasks.write().await.insert(task_id, response.clone());
+            return Json(response);
+        }
     }
 
     // Main Autonomous Perception & Action Loop

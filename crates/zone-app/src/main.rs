@@ -4,15 +4,14 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use tao::dpi::LogicalSize;
 use tao::event::{Event, WindowEvent};
-use tao::event_loop::{ControlFlow, EventLoop};
+use tao::event_loop::{ControlFlow, EventLoopBuilder};
 use tao::window::WindowBuilder;
 use tokio::sync::RwLock;
 use tracing::info;
 use zone_agent::{start_agent_server, AgentState};
-use zone_core::{EngineMode, SplitDirection, SplitNode, TabId, TaskRequest};
+use zone_core::{EngineMode, TabId, TaskRequest};
 use zone_engine_pure::PureEngine;
-use zone_engine_web::WebViewController;
-use zone_ui::LayoutRect;
+use zone_engine_web::{ChromeCommand, WebViewController};
 
 fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
@@ -98,50 +97,81 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
-    // Phase 2: Interactive Desktop Window with Zen Split View & Vertical Tabs
-    let event_loop = EventLoop::new();
+    // Zen Browser UI: Left Chrome Sidebar (244px) + Framed Content WebViews
+    let event_loop = EventLoopBuilder::<ChromeCommand>::with_user_event().build();
+    let proxy = event_loop.create_proxy();
+
     let window = WindowBuilder::new()
-        .with_title("Zone Browser")
-        .with_inner_size(LogicalSize::new(1280.0, 800.0))
+        .with_title("Zone")
+        .with_inner_size(LogicalSize::new(1280.0, 820.0))
         .build(&event_loop)?;
 
-    let mut controller = WebViewController::new();
+    let sidebar_width = 244u32;
+    let mut controller = WebViewController::new(sidebar_width);
 
-    // Demo Zen ergonomics: 2-way horizontal split view
-    let tab_left = TabId::new();
-    let tab_right = TabId::new();
-
-    let split_tree = SplitNode::Split {
-        direction: SplitDirection::Horizontal,
-        ratio: 0.50,
-        first: Box::new(SplitNode::Leaf(tab_left)),
-        second: Box::new(SplitNode::Leaf(tab_right)),
-    };
-
-    let sidebar_width = 56.0f32; // Zen collapsible vertical tabs rail
     let initial_size = window.inner_size();
-    let content_area = LayoutRect::new(
-        sidebar_width,
-        0.0,
-        initial_size.width as f32 - sidebar_width,
-        initial_size.height as f32,
-    );
+    controller.init_chrome_sidebar(&window, initial_size.width, initial_size.height, proxy)?;
 
-    // Initial tabs: left tab Hacker News, right tab GitHub
-    let initial_placements = zone_ui::SplitLayoutEngine::compute_layout(&split_tree, content_area);
-    if let Some((_, r_left)) = initial_placements.iter().find(|(id, _)| *id == tab_left) {
-        let _ = controller.create_tab(&window, tab_left, "https://news.ycombinator.com", *r_left);
-    }
-    if let Some((_, r_right)) = initial_placements.iter().find(|(id, _)| *id == tab_right) {
-        let _ = controller.create_tab(&window, tab_right, "https://github.com", *r_right);
-    }
+    // Initial tabs matching real browsing workflow
+    let tab_1 = TabId::new();
+    let tab_2 = TabId::new();
+    let content_bounds = controller.content_bounds();
+    controller.create_tab(&window, tab_1, "https://github.com/amirulaliffcherahim/zone", content_bounds)?;
+    controller.create_tab(&window, tab_2, "https://news.ycombinator.com", content_bounds)?;
 
-    info!("Zone UI Window initialized. Running native Tao message loop.");
+    info!("Zone UI Window initialized with Zen sidebar. Running native Tao message loop.");
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
 
         match event {
+            Event::UserEvent(cmd) => {
+                match cmd {
+                    ChromeCommand::Navigate { url } => {
+                        controller.navigate_active(&url);
+                    }
+                    ChromeCommand::Back => {
+                        controller.back_active();
+                    }
+                    ChromeCommand::Forward => {
+                        controller.forward_active();
+                    }
+                    ChromeCommand::Reload => {
+                        controller.reload_active();
+                    }
+                    ChromeCommand::NewTab => {
+                        let new_id = TabId::new();
+                        let bounds = controller.content_bounds();
+                        let _ = controller.create_tab(&window, new_id, "https://www.google.com", bounds);
+                    }
+                    ChromeCommand::CloseTab { id } => {
+                        controller.close_tab(id);
+                    }
+                    ChromeCommand::SwitchTab { id } => {
+                        controller.switch_tab(id);
+                    }
+                    ChromeCommand::ToggleSplit => {
+                        controller.toggle_split_view();
+                    }
+                    ChromeCommand::RequestSync => {
+                        controller.sync_chrome_state();
+                    }
+                    ChromeCommand::ContentTitleChanged { id, title } => {
+                        controller.update_tab_title(id, title);
+                    }
+                    ChromeCommand::ContentUrlChanged { id, url } => {
+                        controller.update_tab_url(id, url);
+                    }
+                    ChromeCommand::ContentOpenNewTab { url } => {
+                        let new_id = TabId::new();
+                        let bounds = controller.content_bounds();
+                        let _ = controller.create_tab(&window, new_id, &url, bounds);
+                    }
+                    ChromeCommand::FocusOmnibox => {
+                        controller.focus_omnibox();
+                    }
+                }
+            }
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
                 ..
@@ -152,13 +182,7 @@ fn main() -> Result<()> {
                 event: WindowEvent::Resized(size),
                 ..
             } => {
-                let updated_content = LayoutRect::new(
-                    sidebar_width,
-                    0.0,
-                    size.width as f32 - sidebar_width,
-                    size.height as f32,
-                );
-                controller.apply_split_layout(&split_tree, updated_content);
+                controller.handle_resize(size.width, size.height);
             }
             _ => (),
         }

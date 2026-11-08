@@ -2,5 +2,6 @@
 **/*.rs.bk
 *.pdb
 *.exe
+*.png
 .DS_Store
 Thumbs.db
