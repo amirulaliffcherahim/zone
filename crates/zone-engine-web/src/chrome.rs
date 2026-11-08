@@ -1,5 +1,5 @@
 pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,7 +23,6 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
     --zen-shadow-tab: 0 1px 2.5px rgba(0, 0, 0, 0.08);
     --zen-shadow-content: 0 3px 10px rgba(0, 0, 0, 0.14);
 
-    /* Default to Zen Browser's dark carbon theme (#1b1b1b) matching your live Zen Browser */
     --bg: var(--zen-bg-dark);
     --surface: var(--zen-surface-dark);
     --surface-hover: var(--zen-surface-hover-dark);
@@ -63,18 +62,15 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
     flex-direction: row;
   }
 
-  /* Left Zen Navigator Toolbox (Sidebar) */
   .sidebar {
-    width: 244px;
+    width: 100vw;
     height: 100vh;
     padding: 8px 10px 10px 10px;
     display: flex;
     flex-direction: column;
     gap: 8px;
-    flex-shrink: 0;
   }
 
-  /* Row 1: Top toolbar buttons (Drag region + Menu + Extensions + Back/Forward/Reload) */
   .top-bar {
     height: 30px;
     display: flex;
@@ -125,7 +121,6 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
     fill: currentColor;
   }
 
-  /* Zen 3-dot indicator with green status dot */
   .zen-dots-btn {
     position: relative;
     width: 28px;
@@ -152,7 +147,6 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
     background: #10b981;
   }
 
-  /* Row 2: Zen Pill Urlbar */
   .urlbar-wrapper {
     position: relative;
     width: 100%;
@@ -206,7 +200,6 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
     color: var(--muted);
   }
 
-  /* Row 3: Essentials Grid (Pinned Icon Tiles) */
   .essentials-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -240,7 +233,6 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
     border-radius: 4px;
   }
 
-  /* Row 4: Workspace Header */
   .workspace-header {
     display: flex;
     align-items: center;
@@ -263,7 +255,6 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
     fill: currentColor;
   }
 
-  /* Row 5: Vertical Tab List */
   .tabs-section {
     flex: 1;
     display: flex;
@@ -360,7 +351,6 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
     fill: currentColor;
   }
 
-  /* Thin separator + "+ New Tab" row right inside the list like Zen */
   .tabs-divider {
     height: 1px;
     background: var(--separator);
@@ -397,7 +387,6 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
     fill: currentColor;
   }
 
-  /* Bottom Footer: Workspace Switcher Dots & Theme Toggle */
   .sidebar-footer {
     height: 28px;
     display: flex;
@@ -429,29 +418,10 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
     background: var(--text);
     transform: scale(1.2);
   }
-
-  /* Right Content Area Frame (The white rounded card frame behind WebView2) */
-  .content-frame-area {
-    flex: 1;
-    height: 100vh;
-    padding: 6px 6px 6px 0;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .content-card {
-    flex: 1;
-    background: #ffffff;
-    border-radius: 10px;
-    box-shadow: var(--zen-shadow-content);
-    position: relative;
-    overflow: hidden;
-  }
 </style>
 </head>
 <body>
   <aside class="sidebar">
-    <!-- Top Row: Menu, Extension, Drag Region, Back, Forward, Reload -->
     <div class="top-bar" id="topDragBar">
       <div class="top-left">
         <button class="zen-dots-btn" id="btnToggleTheme" title="Switch Light/Dark Theme">
@@ -482,7 +452,6 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
       </div>
     </div>
 
-    <!-- Omnibox Search / URL Pill -->
     <div class="urlbar-wrapper">
       <div class="urlbar-icon">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18"><path d="M7.75 1.5A6.25 6.25 0 0 1 14 7.75a6.22 6.22 0 0 1-1.334 3.855l3.614 3.615a.75.75 0 0 1-1.06 1.06l-3.615-3.614A6.22 6.22 0 0 1 7.75 14a6.25 6.25 0 0 1 0-12.5m0 1.5a4.75 4.75 0 1 0 0 9.5 4.75 4.75 0 0 0 0-9.5"/></svg>
@@ -497,7 +466,6 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
       />
     </div>
 
-    <!-- Essentials Pinned Tiles (2-Column Zen Grid) -->
     <div class="essentials-grid">
       <button class="essential-tile" data-url="https://github.com/amirulaliffcherahim" title="GitHub">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
@@ -507,34 +475,13 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
       </button>
     </div>
 
-    <!-- Workspace Indicator -->
     <div class="workspace-header" id="workspaceHeader">
       <svg viewBox="0 0 512 512"><path d="M 496,152 A 56,56 0 0 0 440,96 H 220.11 A 23.89,23.89 0 0 1 206.8,92 L 179,73.41 A 55.77,55.77 0 0 0 147.89,64 H 72 a 56,56 0 0 0 -56,56 v 48 a 8,8 0 0 0 8,8 h 464 a 8,8 0 0 0 8,-8 z M 16,392 a 56,56 0 0 0 56,56 h 368 a 56,56 0 0 0 56,-56 V 216 a 8,8 0 0 0 -8,-8 H 24 a 8,8 0 0 0 -8,8 z"/></svg>
       <span id="workspaceName">Default Workspace</span>
     </div>
 
-    <!-- Vertical Tab Strip + Inline "+ New Tab" -->
     <div class="tabs-section">
-      <div id="tabList">
-        <div class="tab-row" data-url="https://github.com/amirulaliffcherahim/zone">
-          <div class="tab-favicon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
-          </div>
-          <div class="tab-title">amirulaliffcherahim/zone</div>
-          <button class="tab-close" title="Close Tab">
-            <svg viewBox="0 0 18 18"><path d="M13.47 3.47a.75.75 0 1 1 1.06 1.06L10.06 9l4.47 4.47a.75.75 0 1 1-1.06 1.06L9 10.06l-4.47 4.47a.75.75 0 0 1-1.06-1.06L7.94 9 3.47 4.53a.75.75 0 1 1 1.06-1.06L9 7.94z"/></svg>
-          </button>
-        </div>
-        <div class="tab-row active" data-url="https://news.ycombinator.com">
-          <div class="tab-favicon">
-            <svg viewBox="0 0 24 24" width="16" height="16"><rect width="24" height="24" rx="4" fill="#ff6600"/><path d="M7 6h2.2l2.8 5.6L14.8 6H17l-4 7.5V18h-2v-4.5L7 6z" fill="#fff"/></svg>
-          </div>
-          <div class="tab-title">Hacker News</div>
-          <button class="tab-close" title="Close Tab">
-            <svg viewBox="0 0 18 18"><path d="M13.47 3.47a.75.75 0 1 1 1.06 1.06L10.06 9l4.47 4.47a.75.75 0 1 1-1.06 1.06L9 10.06l-4.47 4.47a.75.75 0 0 1-1.06-1.06L7.94 9 3.47 4.53a.75.75 0 1 1 1.06-1.06L9 7.94z"/></svg>
-          </button>
-        </div>
-      </div>
+      <div id="tabList"></div>
       <div class="tabs-divider"></div>
       <button class="new-tab-row" id="btnNewTab">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18"><path d="M9 2.5a.75.75 0 0 1 .75.75v5h5a.75.75 0 0 1 0 1.5h-5v5a.75.75 0 0 1-1.5 0v-5h-5a.75.75 0 0 1 0-1.5h5v-5A.75.75 0 0 1 9 2.5"/></svg>
@@ -542,7 +489,6 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
       </button>
     </div>
 
-    <!-- Bottom Minimal Workspace Dots -->
     <div class="sidebar-footer">
       <div class="workspace-dots">
         <button class="ws-dot active" data-ws="Default Workspace" title="Default Workspace"></button>
@@ -551,185 +497,191 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
       </div>
     </div>
   </aside>
+</body>
+</html>
+"####;
 
-  <!-- Right Framed Content Area -->
-  <main class="content-frame-area">
-    <div class="content-card"></div>
-  </main>
+pub const CHROME_JS: &str = r####"
+(function() {
+  const globeSvg = '<svg viewBox="0 0 18 18"><path d="M9 1a8 8 0 1 0 0 16A8 8 0 0 0 9 1m0 1.5a6.5 6.5 0 0 1 5.15 2.55H3.85A6.5 6.5 0 0 1 9 2.5M2.63 6.55h12.74a6.5 6.5 0 0 1 0 4.9H2.63a6.5 6.5 0 0 1 0-4.9M9 15.5a6.5 6.5 0 0 1-5.15-2.55h10.3A6.5 6.5 0 0 1 9 15.5"/></svg>';
+  const closeSvg = '<svg viewBox="0 0 18 18"><path d="M13.47 3.47a.75.75 0 1 1 1.06 1.06L10.06 9l4.47 4.47a.75.75 0 1 1-1.06 1.06L9 10.06l-4.47 4.47a.75.75 0 0 1-1.06-1.06L7.94 9 3.47 4.53a.75.75 0 1 1 1.06-1.06L9 7.94z"/></svg>';
 
-  <script>
-    const ipc = {
-      postMessage: (msg) => {
-        if (window.ipc && typeof window.ipc.postMessage === 'function') {
-          window.ipc.postMessage(msg);
-        } else if (window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function') {
-          window.chrome.webview.postMessage(msg);
-        }
+  function postMsg(action, data) {
+    const payload = JSON.stringify({ action: action, ...(data || {}) });
+    if (window.ipc && typeof window.ipc.postMessage === 'function') {
+      window.ipc.postMessage(payload);
+    } else if (window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function') {
+      window.chrome.webview.postMessage(payload);
+    }
+  }
+
+  function getFaviconUrl(urlStr) {
+    try {
+      const u = new URL(urlStr);
+      if (u.protocol === 'http:' || u.protocol === 'https:') {
+        return 'https://www.google.com/s2/favicons?domain=' + u.hostname + '&sz=32';
       }
-    };
+    } catch (_) {}
+    return null;
+  }
+
+  function formatDisplayUrl(urlStr) {
+    try {
+      const u = new URL(urlStr);
+      return u.hostname.replace(/^www\./, '') + (u.pathname !== '/' ? u.pathname : '');
+    } catch (_) {
+      return urlStr;
+    }
+  }
+
+  window.__zoneUpdateState = function(state) {
+    if (!state) return;
     const omnibox = document.getElementById('omnibox');
     const tabList = document.getElementById('tabList');
     const workspaceName = document.getElementById('workspaceName');
 
-    const globeSvg = `<svg viewBox="0 0 18 18"><path d="M9 1a8 8 0 1 0 0 16A8 8 0 0 0 9 1m0 1.5a6.5 6.5 0 0 1 5.15 2.55H3.85A6.5 6.5 0 0 1 9 2.5M2.63 6.55h12.74a6.5 6.5 0 0 1 0 4.9H2.63a6.5 6.5 0 0 1 0-4.9M9 15.5a6.5 6.5 0 0 1-5.15-2.55h10.3A6.5 6.5 0 0 1 9 15.5"/></svg>`;
-    const closeSvg = `<svg viewBox="0 0 18 18"><path d="M13.47 3.47a.75.75 0 1 1 1.06 1.06L10.06 9l4.47 4.47a.75.75 0 1 1-1.06 1.06L9 10.06l-4.47 4.47a.75.75 0 0 1-1.06-1.06L7.94 9 3.47 4.53a.75.75 0 1 1 1.06-1.06L9 7.94z"/></svg>`;
+    if (state.active_workspace && workspaceName) {
+      workspaceName.textContent = state.active_workspace;
+      document.querySelectorAll('.ws-dot').forEach(d => {
+        if (d.getAttribute('data-ws') === state.active_workspace) {
+          d.classList.add('active');
+        } else {
+          d.classList.remove('active');
+        }
+      });
+    }
 
-    // Theme switch (Dark carbon vs Light paper)
-    document.getElementById('btnToggleTheme').onclick = () => {
-      const current = document.documentElement.getAttribute('data-theme');
-      document.documentElement.setAttribute('data-theme', current === 'light' ? 'dark' : 'light');
-    };
+    if (state.active_url && omnibox && document.activeElement !== omnibox) {
+      omnibox.setAttribute('data-full-url', state.active_url);
+      omnibox.value = formatDisplayUrl(state.active_url);
+    }
 
-    document.getElementById('btnBack').onclick = () => ipc.postMessage(JSON.stringify({ action: 'back' }));
-    document.getElementById('btnForward').onclick = () => ipc.postMessage(JSON.stringify({ action: 'forward' }));
-    document.getElementById('btnReload').onclick = () => ipc.postMessage(JSON.stringify({ action: 'reload' }));
-    document.getElementById('btnNewTab').onclick = () => ipc.postMessage(JSON.stringify({ action: 'new_tab' }));
-    document.getElementById('btnSplitView').onclick = () => ipc.postMessage(JSON.stringify({ action: 'toggle_split' }));
+    if (state.tabs && tabList) {
+      tabList.innerHTML = '';
+      state.tabs.forEach(t => {
+        const row = document.createElement('div');
+        row.className = 'tab-row' + (t.id === state.active_tab_id ? ' active' : '');
+        row.onclick = () => postMsg('switch_tab', { id: t.id });
 
-    // Essentials tiles
+        const fav = document.createElement('div');
+        fav.className = 'tab-favicon';
+        const favUrl = getFaviconUrl(t.url);
+        if (favUrl) {
+          const img = document.createElement('img');
+          img.src = favUrl;
+          img.onerror = () => { fav.innerHTML = globeSvg; };
+          fav.appendChild(img);
+        } else {
+          fav.innerHTML = globeSvg;
+        }
+
+        const title = document.createElement('div');
+        title.className = 'tab-title';
+        title.textContent = (t.title && t.title !== t.url) ? t.title : formatDisplayUrl(t.url || 'New Tab');
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'tab-close';
+        closeBtn.innerHTML = closeSvg;
+        closeBtn.title = 'Close Tab (Ctrl+W)';
+        closeBtn.onclick = (e) => {
+          e.stopPropagation();
+          postMsg('close_tab', { id: t.id });
+        };
+
+        row.appendChild(fav);
+        row.appendChild(title);
+        row.appendChild(closeBtn);
+        tabList.appendChild(row);
+      });
+    }
+  };
+
+  function initChromeEvents() {
+    const omnibox = document.getElementById('omnibox');
+    const btnToggleTheme = document.getElementById('btnToggleTheme');
+    const btnBack = document.getElementById('btnBack');
+    const btnForward = document.getElementById('btnForward');
+    const btnReload = document.getElementById('btnReload');
+    const btnNewTab = document.getElementById('btnNewTab');
+    const btnSplitView = document.getElementById('btnSplitView');
+
+    if (btnToggleTheme) {
+      btnToggleTheme.onclick = () => {
+        const cur = document.documentElement.getAttribute('data-theme');
+        document.documentElement.setAttribute('data-theme', cur === 'light' ? 'dark' : 'light');
+      };
+    }
+    if (btnBack) btnBack.onclick = () => postMsg('back');
+    if (btnForward) btnForward.onclick = () => postMsg('forward');
+    if (btnReload) btnReload.onclick = () => postMsg('reload');
+    if (btnNewTab) btnNewTab.onclick = () => postMsg('new_tab');
+    if (btnSplitView) btnSplitView.onclick = () => postMsg('toggle_split');
+
     document.querySelectorAll('.essential-tile').forEach(tile => {
       tile.onclick = () => {
         const url = tile.getAttribute('data-url');
-        if (url) ipc.postMessage(JSON.stringify({ action: 'navigate', url }));
+        if (url) postMsg('navigate', { url: url });
       };
     });
 
-    // Workspace dots
     document.querySelectorAll('.ws-dot').forEach(dot => {
       dot.onclick = () => {
-        document.querySelectorAll('.ws-dot').forEach(d => d.classList.remove('active'));
-        dot.classList.add('active');
-        workspaceName.textContent = dot.getAttribute('data-ws');
+        const name = dot.getAttribute('data-ws');
+        postMsg('switch_workspace', { name: name });
       };
     });
 
-    omnibox.addEventListener('focus', () => {
-      if (omnibox.dataset.fullUrl) {
-        omnibox.value = omnibox.dataset.fullUrl;
-      }
-      omnibox.select();
-    });
-    omnibox.addEventListener('blur', () => {
-      if (omnibox.dataset.fullUrl && omnibox.value === omnibox.dataset.fullUrl) {
-        omnibox.value = formatDisplayUrl(omnibox.dataset.fullUrl);
-      }
-    });
-
-    omnibox.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        let val = omnibox.value.trim();
-        if (val) {
-          if (!val.startsWith('http://') && !val.startsWith('https://')) {
-            val = (val.includes('.') && !val.includes(' '))
-              ? 'https://' + val
-              : 'https://www.google.com/search?q=' + encodeURIComponent(val);
-          }
-          ipc.postMessage(JSON.stringify({ action: 'navigate', url: val }));
-          omnibox.blur();
+    if (omnibox) {
+      omnibox.addEventListener('focus', () => {
+        const full = omnibox.getAttribute('data-full-url');
+        if (full) omnibox.value = full;
+        omnibox.select();
+      });
+      omnibox.addEventListener('blur', () => {
+        const full = omnibox.getAttribute('data-full-url');
+        if (full && omnibox.value === full) {
+          omnibox.value = formatDisplayUrl(full);
         }
-      }
-    });
+      });
+      omnibox.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          let val = omnibox.value.trim();
+          if (val) {
+            if (!val.startsWith('http://') && !val.startsWith('https://')) {
+              val = (val.includes('.') && !val.includes(' '))
+                ? 'https://' + val
+                : 'https://www.google.com/search?q=' + encodeURIComponent(val);
+            }
+            postMsg('navigate', { url: val });
+            omnibox.blur();
+          }
+        }
+      });
+    }
 
     window.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.key.toLowerCase() === 't') {
         e.preventDefault();
-        ipc.postMessage(JSON.stringify({ action: 'new_tab' }));
+        postMsg('new_tab');
       } else if (e.ctrlKey && e.key.toLowerCase() === 'l') {
         e.preventDefault();
-        omnibox.focus();
-        omnibox.select();
+        if (omnibox) { omnibox.focus(); omnibox.select(); }
       } else if (e.ctrlKey && e.key.toLowerCase() === 'r') {
         e.preventDefault();
-        ipc.postMessage(JSON.stringify({ action: 'reload' }));
+        postMsg('reload');
       }
     });
 
-    function getFaviconUrl(urlStr) {
-      try {
-        const u = new URL(urlStr);
-        if (u.protocol === 'http:' || u.protocol === 'https:') {
-          return `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=32`;
-        }
-      } catch (_) {}
-      return null;
+    if (window.__pendingState) {
+      window.__zoneUpdateState(window.__pendingState);
+      window.__pendingState = null;
     }
+  }
 
-    function formatDisplayUrl(urlStr) {
-      try {
-        const u = new URL(urlStr);
-        return u.hostname.replace(/^www\./, '') + (u.pathname !== '/' ? u.pathname : '');
-      } catch (_) {
-        return urlStr;
-      }
-    }
-
-    window.__zoneUpdateState = function(state) {
-      if (!state) return;
-      if (state.active_url && document.activeElement !== omnibox) {
-        // Show clean domain or URL in omnibox when unfocused, full URL when focused
-        omnibox.dataset.fullUrl = state.active_url;
-        omnibox.value = formatDisplayUrl(state.active_url);
-      }
-      if (state.tabs) {
-        tabList.innerHTML = '';
-        state.tabs.forEach(t => {
-          const row = document.createElement('div');
-          row.className = 'tab-row' + (t.id === state.active_tab_id ? ' active' : '');
-          row.onclick = () => ipc.postMessage(JSON.stringify({ action: 'switch_tab', id: t.id }));
-
-          const fav = document.createElement('div');
-          fav.className = 'tab-favicon';
-          const favUrl = getFaviconUrl(t.url);
-          if (favUrl) {
-            const img = document.createElement('img');
-            img.src = favUrl;
-            img.onerror = () => { fav.innerHTML = globeSvg; };
-            fav.appendChild(img);
-          } else {
-            fav.innerHTML = globeSvg;
-          }
-
-          const title = document.createElement('div');
-          title.className = 'tab-title';
-          title.textContent = (t.title && t.title !== t.url) ? t.title : formatDisplayUrl(t.url || 'New Tab');
-
-          const closeBtn = document.createElement('button');
-          closeBtn.className = 'tab-close';
-          closeBtn.innerHTML = closeSvg;
-          closeBtn.title = 'Close Tab (Ctrl+W)';
-          closeBtn.onclick = (e) => {
-            e.stopPropagation();
-            ipc.postMessage(JSON.stringify({ action: 'close_tab', id: t.id }));
-          };
-
-          row.appendChild(fav);
-          row.appendChild(title);
-          row.appendChild(closeBtn);
-          tabList.appendChild(row);
-        });
-      }
-    };
-
-    // Initial seed state before first Rust sync
-    window.__zoneUpdateState({
-      active_tab_id: "init-2",
-      active_url: "https://news.ycombinator.com",
-      tabs: [
-        { id: "init-1", title: "amirulaliffcherahim/zone · GitHub", url: "https://github.com/amirulaliffcherahim/zone" },
-        { id: "init-2", title: "Hacker News", url: "https://news.ycombinator.com" }
-      ]
-    });
-
-    document.addEventListener("DOMContentLoaded", () => {
-      ipc.postMessage(JSON.stringify({ action: "request_sync" }));
-    });
-    // Poll briefly during startup so initial tabs always appear even if Chrome finishes loading after Rust creates tabs
-    for (const delay of [50, 150, 400, 800, 1500, 3000]) {
-      setTimeout(() => {
-        ipc.postMessage(JSON.stringify({ action: "request_sync" }));
-      }, delay);
-    }
-  </script>
-</body>
-</html>
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initChromeEvents);
+  } else {
+    initChromeEvents();
+  }
+})();
 "####;

@@ -32,6 +32,7 @@ fn main() -> Result<()> {
         active_gear: Arc::new(RwLock::new(EngineMode::PureRust)),
         shared_cookies: Arc::new(RwLock::new(Vec::new())),
         tasks: Arc::new(RwLock::new(HashMap::new())),
+        started_at: std::time::Instant::now(),
     };
 
     // Spin up background Tokio runtime for on-board AI agent daemon
@@ -121,6 +122,8 @@ fn main() -> Result<()> {
 
     info!("Zone UI Window initialized with Zen sidebar. Running native Tao message loop.");
 
+    let mut startup_sync_ticks = 20u32;
+
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
 
@@ -153,8 +156,14 @@ fn main() -> Result<()> {
                     ChromeCommand::ToggleSplit => {
                         controller.toggle_split_view();
                     }
+                    ChromeCommand::SwitchWorkspace { name } => {
+                        controller.switch_workspace(&window, name);
+                    }
                     ChromeCommand::RequestSync => {
                         controller.sync_chrome_state();
+                    }
+                    ChromeCommand::Log { text } => {
+                        info!("Chrome JS Log: {}", text);
                     }
                     ChromeCommand::ContentTitleChanged { id, title } => {
                         controller.update_tab_title(id, title);
@@ -183,6 +192,12 @@ fn main() -> Result<()> {
                 ..
             } => {
                 controller.handle_resize(size.width, size.height);
+            }
+            Event::MainEventsCleared => {
+                if startup_sync_ticks > 0 {
+                    startup_sync_ticks -= 1;
+                    controller.sync_chrome_state();
+                }
             }
             _ => (),
         }

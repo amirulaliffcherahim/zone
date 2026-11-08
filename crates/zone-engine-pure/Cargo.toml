@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 zone-core = { workspace = true }
+url = { workspace = true }
 scraper = { workspace = true }
 html5ever = { workspace = true }
 taffy = { workspace = true }

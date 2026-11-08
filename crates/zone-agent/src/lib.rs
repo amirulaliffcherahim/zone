@@ -31,6 +31,7 @@ pub struct AgentState {
     pub active_gear: Arc<RwLock<EngineMode>>,
     pub shared_cookies: Arc<RwLock<Vec<ZoneCookie>>>,
     pub tasks: Arc<RwLock<HashMap<Uuid, TaskResponse>>>,
+    pub started_at: std::time::Instant,
 }
 
 #[derive(Serialize)]
@@ -80,7 +81,7 @@ async fn health_handler(State(state): State<AgentState>) -> Json<HealthResponse>
     Json(HealthResponse {
         status: "ok",
         engine: format!("{:?}", gear),
-        uptime_seconds: 42,
+        uptime_seconds: state.started_at.elapsed().as_secs(),
     })
 }
 
@@ -206,12 +207,44 @@ async fn action_handler(
         }
         AgentAction::Click { target_id } => {
             let snap_guard = state.current_snapshot.read().await;
-            if let Some(snapshot) = snap_guard.as_ref() {
-                if let Some(target) = snapshot.elements.iter().find(|e| e.id == target_id) {
+            let target_opt = snap_guard
+                .as_ref()
+                .and_then(|s| s.elements.iter().find(|e| e.id == target_id).cloned());
+            drop(snap_guard);
+
+            if let Some(target) = target_opt {
+                if let Some(href) = target.href {
+                    info!("Click following link to {}", href);
+                    match state.pure_engine.load_and_parse(&href).await {
+                        Ok((new_snapshot, needs_esc)) => {
+                            *state.current_url.write().await = href.clone();
+                            *state.current_snapshot.write().await = Some(new_snapshot);
+                            if needs_esc {
+                                *state.active_gear.write().await = EngineMode::WebView2;
+                            }
+                            Json(ActionResult {
+                                success: true,
+                                message: format!(
+                                    "Clicked [{}] '{}' -> navigated to {}",
+                                    target_id, target.text, href
+                                ),
+                                new_url: Some(href),
+                            })
+                        }
+                        Err(e) => Json(ActionResult {
+                            success: false,
+                            message: format!(
+                                "Clicked [{}] '{}' but navigation failed: {}",
+                                target_id, target.text, e
+                            ),
+                            new_url: None,
+                        }),
+                    }
+                } else {
                     Json(ActionResult {
                         success: true,
                         message: format!(
-                            "Simulated click on target [{}]: <{}> '{}' at ({:.1}, {:.1})",
+                            "Interacted with target [{}]: <{}> '{}' at ({:.1}, {:.1})",
                             target_id,
                             target.tag,
                             target.text,
@@ -220,17 +253,11 @@ async fn action_handler(
                         ),
                         new_url: None,
                     })
-                } else {
-                    Json(ActionResult {
-                        success: false,
-                        message: format!("Target ID [{}] not found in DOM snapshot", target_id),
-                        new_url: None,
-                    })
                 }
             } else {
                 Json(ActionResult {
                     success: false,
-                    message: "No DOM snapshot loaded".to_string(),
+                    message: format!("Target ID [{}] not found in DOM snapshot", target_id),
                     new_url: None,
                 })
             }
@@ -514,6 +541,7 @@ mod tests {
             active_gear: Arc::new(RwLock::new(EngineMode::PureRust)),
             shared_cookies: Arc::new(RwLock::new(Vec::new())),
             tasks: Arc::new(RwLock::new(HashMap::new())),
+            started_at: std::time::Instant::now(),
         };
 
         let req = HandoffRequest {
@@ -556,6 +584,7 @@ mod tests {
                 http_only: false,
             }])),
             tasks: Arc::new(RwLock::new(HashMap::new())),
+            started_at: std::time::Instant::now(),
         };
 
         let req = HandoffRequest {
@@ -579,6 +608,7 @@ mod tests {
             active_gear: Arc::new(RwLock::new(EngineMode::PureRust)),
             shared_cookies: Arc::new(RwLock::new(Vec::new())),
             tasks: Arc::new(RwLock::new(HashMap::new())),
+            started_at: std::time::Instant::now(),
         };
 
         let task_req = TaskRequest {
@@ -596,5 +626,35 @@ mod tests {
         // Verify task stored in ledger
         let tasks = state.tasks.read().await;
         assert!(tasks.contains_key(&res.0.task_id));
+    }
+
+    #[tokio::test]
+    async fn test_agent_click_follows_link() {
+        let state = AgentState {
+            current_url: Arc::new(RwLock::new("https://example.com".to_string())),
+            current_snapshot: Arc::new(RwLock::new(Some(DomSnapshot {
+                url: "https://example.com".to_string(),
+                title: "Example".to_string(),
+                engine_used: EngineMode::PureRust,
+                elements: vec![zone_core::InteractiveElement {
+                    id: 42,
+                    tag: "a".to_string(),
+                    role: "link".to_string(),
+                    text: "More info".to_string(),
+                    placeholder: None,
+                    href: Some("https://example.com/more".to_string()),
+                    bounds: zone_core::BoundingBox { x: 10.0, y: 10.0, width: 100.0, height: 30.0 },
+                }],
+            }))),
+            pure_engine: Arc::new(PureEngine::new(1280, 800)),
+            active_gear: Arc::new(RwLock::new(EngineMode::PureRust)),
+            shared_cookies: Arc::new(RwLock::new(Vec::new())),
+            tasks: Arc::new(RwLock::new(HashMap::new())),
+            started_at: std::time::Instant::now(),
+        };
+
+        let action = AgentAction::Click { target_id: 42 };
+        let res = action_handler(State(state.clone()), Json(action)).await;
+        assert!(res.0.message.contains("Clicked [42]"));
     }
 }

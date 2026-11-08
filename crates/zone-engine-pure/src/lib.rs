@@ -125,12 +125,20 @@ impl PureEngine {
 
             curr_y += box_height + 12.0;
 
+            let href = element.value().attr("href").and_then(|h| {
+                url::Url::parse(url)
+                    .ok()
+                    .and_then(|base| base.join(h).ok())
+                    .map(|u| u.to_string())
+            });
+
             elements.push(InteractiveElement {
                 id: id_counter,
                 tag,
                 role,
                 text: text_label,
                 placeholder,
+                href,
                 bounds,
             });
 

@@ -69,6 +69,8 @@ pub struct InteractiveElement {
     pub role: String,
     pub text: String,
     pub placeholder: Option<String>,
+    #[serde(default)]
+    pub href: Option<String>,
     pub bounds: BoundingBox,
 }
 

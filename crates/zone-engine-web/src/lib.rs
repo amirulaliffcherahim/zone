@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex};
 use tao::dpi::{PhysicalPosition, PhysicalSize};
 use tao::event_loop::EventLoopProxy;
 use tao::window::Window;
-use tracing::{info, warn};
+use tracing::{error, info, warn};
 use wry::{PageLoadEvent, Rect, WebView, WebViewBuilder};
 use zone_core::{
     BoundingBox, DomSnapshot, EngineMode, GlanceConfig, InteractiveElement, SplitDirection,
@@ -34,6 +34,7 @@ pub const DOM_EXTRACTOR_JS: &str = r#"
                 role: el.getAttribute('role') || el.tagName.toLowerCase(),
                 text: (el.innerText || el.value || el.getAttribute('placeholder') || el.getAttribute('aria-label') || '').trim(),
                 placeholder: el.getAttribute('placeholder') || null,
+                href: el.getAttribute('href') || null,
                 bounds: {
                     x: rect.left,
                     y: rect.top,
@@ -73,6 +74,25 @@ pub const DOM_EXTRACTOR_JS: &str = r#"
             window.ipc.postMessage(JSON.stringify({ type: 'hotkey', key: 'ctrl_r' }));
         }
     });
+
+    // Report top-level metadata safely without subframe pollution
+    if (window === window.top) {
+        function reportMeta() {
+            if (window.ipc) {
+                window.ipc.postMessage(JSON.stringify({
+                    type: "page_meta",
+                    url: window.location.href,
+                    title: document.title || window.location.hostname
+                }));
+            }
+        }
+        window.addEventListener("DOMContentLoaded", reportMeta);
+        window.addEventListener("load", reportMeta);
+        window.addEventListener("popstate", reportMeta);
+        window.addEventListener("hashchange", reportMeta);
+        setTimeout(reportMeta, 150);
+        setTimeout(reportMeta, 1000);
+    }
 })();
 "#;
 
@@ -87,7 +107,9 @@ pub enum ChromeCommand {
     CloseTab { id: TabId },
     SwitchTab { id: TabId },
     ToggleSplit,
+    SwitchWorkspace { name: String },
     RequestSync,
+    Log { text: String },
     // Internal events sent from content webview callbacks
     #[serde(skip)]
     ContentTitleChanged { id: TabId, title: String },
@@ -110,6 +132,7 @@ struct TabInfo {
 struct ChromeStatePayload {
     active_tab_id: Option<TabId>,
     active_url: String,
+    active_workspace: String,
     tabs: Vec<TabInfo>,
 }
 
@@ -118,6 +141,7 @@ pub struct WebTab {
     pub webview: WebView,
     pub current_url: String,
     pub current_title: String,
+    pub workspace: String,
 }
 
 pub struct WebViewController {
@@ -131,6 +155,7 @@ pub struct WebViewController {
     pub sidebar_width: u32,
     pub window_size: (u32, u32),
     pub proxy: Option<EventLoopProxy<ChromeCommand>>,
+    pub active_workspace: String,
 }
 
 impl WebViewController {
@@ -146,6 +171,7 @@ impl WebViewController {
             sidebar_width,
             window_size: (1280, 800),
             proxy: None,
+            active_workspace: "Default Workspace".to_string(),
         }
     }
 
@@ -155,15 +181,13 @@ impl WebViewController {
 
     pub fn content_bounds(&self) -> LayoutRect {
         let (w, h) = self.window_size;
-        let pad = 6.0f32; // Zen 6px inset around the content card
         let content_x = self.sidebar_width as f32;
-        let content_y = pad;
-        let content_w = (w as f32 - self.sidebar_width as f32 - pad).max(100.0);
-        let content_h = (h as f32 - (pad * 2.0)).max(100.0);
-        LayoutRect::new(content_x, content_y, content_w, content_h)
+        let content_w = (w.saturating_sub(self.sidebar_width)).max(100) as f32;
+        let content_h = h.max(100) as f32;
+        LayoutRect::new(content_x, 0.0, content_w, content_h)
     }
 
-    /// Creates the full-window Zen Chrome WebView (draws sidebar + framed background)
+    /// Creates the dedicated Zen Chrome Sidebar WebView at x=0 with trusted IPC
     pub fn init_chrome_sidebar(
         &mut self,
         window: &Window,
@@ -176,13 +200,21 @@ impl WebViewController {
 
         let rect = Rect {
             position: PhysicalPosition::new(0, 0).into(),
-            size: PhysicalSize::new(width, height).into(),
+            size: PhysicalSize::new(self.sidebar_width, height).into(),
         };
 
         let proxy_load = proxy.clone();
         let webview = WebViewBuilder::new()
             .with_bounds(rect)
-            .with_html(chrome::CHROME_HTML)
+            .with_initialization_script(chrome::CHROME_JS)
+            .with_custom_protocol("zone".into(), |_id, _req| {
+                wry::http::Response::builder()
+                    .header("Content-Type", "text/html; charset=utf-8")
+                    .header("Access-Control-Allow-Origin", "*")
+                    .body(std::borrow::Cow::Borrowed(chrome::CHROME_HTML.as_bytes()))
+                    .unwrap()
+            })
+            .with_url("http://zone.localhost/index.html")
             .with_on_page_load_handler(move |event, _url| {
                 if matches!(event, PageLoadEvent::Finished) {
                     let _ = proxy_load.send_event(ChromeCommand::RequestSync);
@@ -216,7 +248,6 @@ impl WebViewController {
         let latest_dom_ref = self.latest_dom.clone();
         let proxy_ipc = self.proxy.clone();
         let proxy_title = self.proxy.clone();
-        let proxy_nav = self.proxy.clone();
         let proxy_new_win = self.proxy.clone();
 
         let rect = Rect {
@@ -252,6 +283,7 @@ impl WebViewController {
                                     let role = el.get("role").and_then(|r| r.as_str()).unwrap_or("generic").to_string();
                                     let text = el.get("text").and_then(|t| t.as_str()).unwrap_or("").to_string();
                                     let placeholder = el.get("placeholder").and_then(|p| p.as_str()).map(|s| s.to_string());
+                                    let href = el.get("href").and_then(|h| h.as_str()).map(|s| s.to_string());
                                     let b = el.get("bounds");
                                     let bounds = BoundingBox {
                                         x: b.and_then(|v| v.get("x")).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
@@ -266,6 +298,7 @@ impl WebViewController {
                                         role,
                                         text,
                                         placeholder,
+                                        href,
                                         bounds,
                                     });
                                 }
@@ -292,6 +325,22 @@ impl WebViewController {
                                 }
                             }
                         }
+                        Some("page_meta") => {
+                            if let Some(p) = &proxy_ipc {
+                                if let Some(u) = val.get("url").and_then(|v| v.as_str()) {
+                                    let _ = p.send_event(ChromeCommand::ContentUrlChanged {
+                                        id: tab_id,
+                                        url: u.to_string(),
+                                    });
+                                }
+                                if let Some(t) = val.get("title").and_then(|v| v.as_str()) {
+                                    let _ = p.send_event(ChromeCommand::ContentTitleChanged {
+                                        id: tab_id,
+                                        title: t.to_string(),
+                                    });
+                                }
+                            }
+                        }
                         _ => {}
                     }
                 }
@@ -303,15 +352,6 @@ impl WebViewController {
                         title,
                     });
                 }
-            })
-            .with_navigation_handler(move |nav_url: String| {
-                if let Some(p) = &proxy_nav {
-                    let _ = p.send_event(ChromeCommand::ContentUrlChanged {
-                        id: tab_id,
-                        url: nav_url,
-                    });
-                }
-                true
             })
             .with_new_window_req_handler(move |target_url: String| {
                 if let Some(p) = &proxy_new_win {
@@ -329,6 +369,7 @@ impl WebViewController {
                 webview,
                 current_url: url.to_string(),
                 current_title: url.to_string(),
+                workspace: self.active_workspace.clone(),
             },
         );
 
@@ -369,6 +410,28 @@ impl WebViewController {
                 "const el = document.getElementById('omnibox'); if (el) { el.focus(); el.select(); }",
             );
         }
+    }
+
+    pub fn switch_workspace(&mut self, window: &Window, name: String) {
+        self.active_workspace = name;
+        let existing_tab = self
+            .tab_order
+            .iter()
+            .rev()
+            .copied()
+            .find(|id| self.tabs.get(id).map_or(false, |t| t.workspace == self.active_workspace));
+
+        match existing_tab {
+            Some(target_id) => {
+                self.switch_tab(target_id);
+            }
+            None => {
+                let new_id = TabId::new();
+                let bounds = self.content_bounds();
+                let _ = self.create_tab(window, new_id, "https://www.google.com", bounds);
+            }
+        }
+        self.sync_chrome_state();
     }
 
     /// Toggles 2-way side-by-side Split View using SplitLayoutEngine
@@ -482,6 +545,7 @@ impl WebViewController {
                 .tab_order
                 .iter()
                 .filter_map(|id| self.tabs.get(id))
+                .filter(|t| t.workspace == self.active_workspace)
                 .map(|t| TabInfo {
                     id: t.id,
                     title: t.current_title.clone(),
@@ -492,11 +556,15 @@ impl WebViewController {
             let payload = ChromeStatePayload {
                 active_tab_id: self.active_tab_id,
                 active_url,
+                active_workspace: self.active_workspace.clone(),
                 tabs: tabs_info,
             };
 
             if let Ok(json_str) = serde_json::to_string(&payload) {
-                let script = format!("window.__zoneUpdateState && window.__zoneUpdateState({});", json_str);
+                let script = format!(
+                    "if (typeof window.__zoneUpdateState === 'function') {{ window.__zoneUpdateState({}); }} else {{ window.__pendingState = {}; }}",
+                    json_str, json_str
+                );
                 let _ = chrome.evaluate_script(&script);
             }
         }
@@ -509,7 +577,7 @@ impl WebViewController {
         if let Some(chrome) = &mut self.chrome {
             let rect = Rect {
                 position: PhysicalPosition::new(0, 0).into(),
-                size: PhysicalSize::new(width, height).into(),
+                size: PhysicalSize::new(self.sidebar_width, height).into(),
             };
             let _ = chrome.set_bounds(rect);
         }
@@ -581,5 +649,72 @@ impl WebViewController {
 
     pub fn close_glance(&mut self) {
         self.glance = None;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_chrome_command_deserialization() {
+        let nav: ChromeCommand =
+            serde_json::from_str(r#"{"action":"navigate","url":"https://example.com"}"#).unwrap();
+        match nav {
+            ChromeCommand::Navigate { url } => assert_eq!(url, "https://example.com"),
+            _ => panic!("Expected Navigate"),
+        }
+
+        let back: ChromeCommand = serde_json::from_str(r#"{"action":"back"}"#).unwrap();
+        assert!(matches!(back, ChromeCommand::Back));
+
+        let fwd: ChromeCommand = serde_json::from_str(r#"{"action":"forward"}"#).unwrap();
+        assert!(matches!(fwd, ChromeCommand::Forward));
+
+        let reload: ChromeCommand = serde_json::from_str(r#"{"action":"reload"}"#).unwrap();
+        assert!(matches!(reload, ChromeCommand::Reload));
+
+        let new_tab: ChromeCommand = serde_json::from_str(r#"{"action":"new_tab"}"#).unwrap();
+        assert!(matches!(new_tab, ChromeCommand::NewTab));
+
+        let split: ChromeCommand = serde_json::from_str(r#"{"action":"toggle_split"}"#).unwrap();
+        assert!(matches!(split, ChromeCommand::ToggleSplit));
+
+        let sync: ChromeCommand = serde_json::from_str(r#"{"action":"request_sync"}"#).unwrap();
+        assert!(matches!(sync, ChromeCommand::RequestSync));
+
+        let ws: ChromeCommand = serde_json::from_str(r#"{"action":"switch_workspace","name":"Work"}"#).unwrap();
+        match ws {
+            ChromeCommand::SwitchWorkspace { name } => assert_eq!(name, "Work"),
+            _ => panic!("Expected SwitchWorkspace"),
+        }
+
+        let switch: ChromeCommand = serde_json::from_str(
+            r#"{"action":"switch_tab","id":"550e8400-e29b-41d4-a716-446655440000"}"#,
+        )
+        .unwrap();
+        match switch {
+            ChromeCommand::SwitchTab { id } => {
+                assert_eq!(
+                    id.0.to_string(),
+                    "550e8400-e29b-41d4-a716-446655440000"
+                );
+            }
+            _ => panic!("Expected SwitchTab"),
+        }
+
+        let close: ChromeCommand = serde_json::from_str(
+            r#"{"action":"close_tab","id":"550e8400-e29b-41d4-a716-446655440000"}"#,
+        )
+        .unwrap();
+        match close {
+            ChromeCommand::CloseTab { id } => {
+                assert_eq!(
+                    id.0.to_string(),
+                    "550e8400-e29b-41d4-a716-446655440000"
+                );
+            }
+            _ => panic!("Expected CloseTab"),
+        }
     }
 }
