@@ -15,6 +15,7 @@ zone-engine-web = { workspace = true }
 zone-agent = { workspace = true }
 tao = "0.31"
 tokio = { workspace = true }
+reqwest = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 anyhow = { workspace = true }

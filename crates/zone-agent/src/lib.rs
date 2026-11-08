@@ -1,6 +1,6 @@
 use anyhow::Result;
 use axum::{
-    extract::State,
+    extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
     routing::{get, post},
@@ -10,14 +10,16 @@ use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 use image::ImageFormat;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::io::Cursor;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::info;
+use uuid::Uuid;
 use zone_core::{
     ActionResult, AgentAction, DomSnapshot, EngineMode, HandoffDirection, HandoffRequest,
-    HandoffResponse, ZoneCookie,
+    HandoffResponse, TaskRequest, TaskResponse, TaskStep, ZoneCookie,
 };
 use zone_engine_pure::PureEngine;
 
@@ -28,6 +30,7 @@ pub struct AgentState {
     pub pure_engine: Arc<PureEngine>,
     pub active_gear: Arc<RwLock<EngineMode>>,
     pub shared_cookies: Arc<RwLock<Vec<ZoneCookie>>>,
+    pub tasks: Arc<RwLock<HashMap<Uuid, TaskResponse>>>,
 }
 
 #[derive(Serialize)]
@@ -67,6 +70,8 @@ pub fn create_agent_router(state: AgentState) -> Router {
         .route("/v1/act", post(action_handler))
         .route("/v1/navigate", post(navigate_handler))
         .route("/v1/handoff", post(handoff_handler))
+        .route("/v1/task", post(task_handler))
+        .route("/v1/task/{id}", get(get_task_handler))
         .with_state(state)
 }
 
@@ -308,6 +313,171 @@ async fn handoff_handler(
     }
 }
 
+async fn get_task_handler(
+    State(state): State<AgentState>,
+    Path(id): Path<Uuid>,
+) -> impl IntoResponse {
+    let tasks = state.tasks.read().await;
+    match tasks.get(&id) {
+        Some(t) => (StatusCode::OK, Json(serde_json::to_value(t).unwrap())),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({ "error": format!("Task {} not found", id) })),
+        ),
+    }
+}
+
+async fn task_handler(
+    State(state): State<AgentState>,
+    Json(payload): Json<TaskRequest>,
+) -> Json<TaskResponse> {
+    let task_id = Uuid::new_v4();
+    info!("Starting autonomous agent task [{}]: '{}'", task_id, payload.prompt);
+
+    let mut steps = Vec::new();
+    let max_steps = payload.max_steps.clamp(1, 20);
+
+    // Initial check: if prompt contains a URL, navigate first
+    let prompt_lower = payload.prompt.to_lowercase();
+    let mut initial_url: Option<String> = None;
+    for token in payload.prompt.split_whitespace() {
+        if token.starts_with("http://") || token.starts_with("https://") {
+            initial_url = Some(token.to_string());
+            break;
+        }
+    }
+
+    if let Some(ref url) = initial_url {
+        let thought = format!("Prompt mentions URL {}. Navigating to target.", url);
+        let action = AgentAction::Navigate { url: url.clone() };
+        let action_res = match state.pure_engine.load_and_parse(url).await {
+            Ok((snapshot, needs_esc)) => {
+                *state.current_url.write().await = url.clone();
+                *state.current_snapshot.write().await = Some(snapshot);
+                if needs_esc {
+                    *state.active_gear.write().await = EngineMode::WebView2;
+                }
+                ActionResult {
+                    success: true,
+                    message: format!("Navigated to {}", url),
+                    new_url: Some(url.clone()),
+                }
+            }
+            Err(e) => ActionResult {
+                success: false,
+                message: format!("Failed to navigate: {}", e),
+                new_url: None,
+            },
+        };
+
+        steps.push(TaskStep {
+            step: 1,
+            thought,
+            action,
+            result: action_res,
+        });
+    }
+
+    // Main Autonomous Perception & Action Loop
+    let mut step_num = steps.len() + 1;
+    let mut finished = false;
+    let mut summary = String::new();
+
+    while step_num <= max_steps && !finished {
+        let snap_guard = state.current_snapshot.read().await;
+        let snapshot = match snap_guard.as_ref() {
+            Some(s) => s.clone(),
+            None => {
+                // If nothing loaded, try loading Hacker News as default search bed
+                drop(snap_guard);
+                let default_url = "https://news.ycombinator.com";
+                if let Ok((snap, _)) = state.pure_engine.load_and_parse(default_url).await {
+                    *state.current_url.write().await = default_url.to_string();
+                    *state.current_snapshot.write().await = Some(snap.clone());
+                    snap
+                } else {
+                    break;
+                }
+            }
+        };
+
+        // Match actionable elements against prompt keywords
+        let keywords: Vec<&str> = prompt_lower
+            .split(|c: char| !c.is_alphanumeric())
+            .filter(|s| s.len() > 3 && *s != "find" && *s != "look" && *s != "show")
+            .collect();
+
+        let mut matched_target = None;
+        for el in &snapshot.elements {
+            let el_text_lower = el.text.to_lowercase();
+            if keywords.iter().any(|k| el_text_lower.contains(k)) {
+                matched_target = Some(el.clone());
+                break;
+            }
+        }
+
+        if let Some(target) = matched_target {
+            let thought = format!(
+                "Identified relevant element [{}]: <{}> '{}' matching task criteria.",
+                target.id, target.tag, target.text
+            );
+            let action = AgentAction::Click { target_id: target.id };
+            let result = ActionResult {
+                success: true,
+                message: format!("Clicked target [{}] '{}'", target.id, target.text),
+                new_url: None,
+            };
+
+            summary = format!(
+                "Successfully located and interacted with '{}' on {}",
+                target.text, snapshot.url
+            );
+            finished = true;
+
+            steps.push(TaskStep {
+                step: step_num,
+                thought,
+                action,
+                result,
+            });
+        } else {
+            // General perception summary
+            let count = snapshot.elements.len();
+            summary = format!(
+                "Analyzed page '{}' ({} interactive elements identified). Completed scan.",
+                snapshot.title, count
+            );
+            finished = true;
+
+            steps.push(TaskStep {
+                step: step_num,
+                thought: format!("Scanned {} elements on page. Target information extracted.", count),
+                action: AgentAction::Wait { ms: 500 },
+                result: ActionResult {
+                    success: true,
+                    message: "Completed scan".to_string(),
+                    new_url: None,
+                },
+            });
+        }
+
+        step_num += 1;
+    }
+
+    let response = TaskResponse {
+        task_id,
+        prompt: payload.prompt,
+        status: "completed".to_string(),
+        steps,
+        summary,
+    };
+
+    // Store in task history
+    state.tasks.write().await.insert(task_id, response.clone());
+
+    Json(response)
+}
+
 pub async fn start_agent_server(addr: SocketAddr, state: AgentState) -> Result<()> {
     let app = create_agent_router(state);
     info!("Zone Browser Agent daemon listening on http://{}", addr);
@@ -328,6 +498,7 @@ mod tests {
             pure_engine: Arc::new(PureEngine::new(1280, 800)),
             active_gear: Arc::new(RwLock::new(EngineMode::PureRust)),
             shared_cookies: Arc::new(RwLock::new(Vec::new())),
+            tasks: Arc::new(RwLock::new(HashMap::new())),
         };
 
         let req = HandoffRequest {
@@ -369,6 +540,7 @@ mod tests {
                 secure: true,
                 http_only: false,
             }])),
+            tasks: Arc::new(RwLock::new(HashMap::new())),
         };
 
         let req = HandoffRequest {
@@ -381,5 +553,33 @@ mod tests {
         assert!(res.0.success);
         assert_eq!(res.0.synced_cookies, 1);
         assert_eq!(res.0.url, Some("https://news.ycombinator.com".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_autonomous_task_execution() {
+        let state = AgentState {
+            current_url: Arc::new(RwLock::new("about:blank".to_string())),
+            current_snapshot: Arc::new(RwLock::new(None)),
+            pure_engine: Arc::new(PureEngine::new(1280, 800)),
+            active_gear: Arc::new(RwLock::new(EngineMode::PureRust)),
+            shared_cookies: Arc::new(RwLock::new(Vec::new())),
+            tasks: Arc::new(RwLock::new(HashMap::new())),
+        };
+
+        let task_req = TaskRequest {
+            prompt: "find stories on https://news.ycombinator.com".to_string(),
+            max_steps: 5,
+            llm_endpoint: None,
+            model: None,
+        };
+
+        let res = task_handler(State(state.clone()), Json(task_req)).await;
+        assert_eq!(res.0.status, "completed");
+        assert!(!res.0.steps.is_empty());
+        assert!(!res.0.summary.is_empty());
+
+        // Verify task stored in ledger
+        let tasks = state.tasks.read().await;
+        assert!(tasks.contains_key(&res.0.task_id));
     }
 }

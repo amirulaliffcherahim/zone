@@ -1,4 +1,5 @@
 use anyhow::Result;
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tao::dpi::LogicalSize;
@@ -8,7 +9,7 @@ use tao::window::WindowBuilder;
 use tokio::sync::RwLock;
 use tracing::info;
 use zone_agent::{start_agent_server, AgentState};
-use zone_core::{EngineMode, SplitDirection, SplitNode, TabId};
+use zone_core::{EngineMode, SplitDirection, SplitNode, TabId, TaskRequest};
 use zone_engine_pure::PureEngine;
 use zone_engine_web::WebViewController;
 use zone_ui::LayoutRect;
@@ -31,6 +32,7 @@ fn main() -> Result<()> {
         pure_engine: pure_engine.clone(),
         active_gear: Arc::new(RwLock::new(EngineMode::PureRust)),
         shared_cookies: Arc::new(RwLock::new(Vec::new())),
+        tasks: Arc::new(RwLock::new(HashMap::new())),
     };
 
     // Spin up background Tokio runtime for on-board AI agent daemon
@@ -47,6 +49,46 @@ fn main() -> Result<()> {
     });
 
     info!("On-board AI agent daemon is ACTIVE by default at http://127.0.0.1:4567");
+
+    // CLI autonomous task runner: --task "prompt"
+    if let Some(task_idx) = args.iter().position(|a| a == "--task") {
+        if let Some(prompt) = args.get(task_idx + 1) {
+            info!("Executing CLI autonomous task: '{}'", prompt);
+            let prompt_str = prompt.clone();
+            rt.block_on(async move {
+                // Wait briefly for daemon startup
+                tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+                let client = reqwest::Client::new();
+                let task_req = TaskRequest {
+                    prompt: prompt_str,
+                    max_steps: 5,
+                    llm_endpoint: None,
+                    model: None,
+                };
+                match client
+                    .post("http://127.0.0.1:4567/v1/task")
+                    .json(&task_req)
+                    .send()
+                    .await
+                {
+                    Ok(resp) => {
+                        if let Ok(task_res) = resp.json::<zone_core::TaskResponse>().await {
+                            println!("\n=== TASK COMPLETED ===");
+                            println!("ID: {}", task_res.task_id);
+                            println!("Status: {}", task_res.status);
+                            println!("Summary: {}\n", task_res.summary);
+                            for step in task_res.steps {
+                                println!("Step {}: {}", step.step, step.thought);
+                                println!("  -> Result: {}", step.result.message);
+                            }
+                        }
+                    }
+                    Err(e) => eprintln!("Failed to execute task: {}", e),
+                }
+            });
+            return Ok(());
+        }
+    }
 
     if is_headless {
         info!("Running in headless mode. Press Ctrl+C to terminate.");

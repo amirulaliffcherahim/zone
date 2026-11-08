@@ -191,3 +191,33 @@ impl Default for GlanceConfig {
         }
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TaskRequest {
+    pub prompt: String,
+    #[serde(default = "default_max_steps")]
+    pub max_steps: usize,
+    pub llm_endpoint: Option<String>,
+    pub model: Option<String>,
+}
+
+fn default_max_steps() -> usize {
+    10
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TaskStep {
+    pub step: usize,
+    pub thought: String,
+    pub action: AgentAction,
+    pub result: ActionResult,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TaskResponse {
+    pub task_id: Uuid,
+    pub prompt: String,
+    pub status: String,
+    pub steps: Vec<TaskStep>,
+    pub summary: String,
+}

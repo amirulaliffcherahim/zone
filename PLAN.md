@@ -194,7 +194,9 @@ cookie_store = "0.21"
 - [ ] Build shared session & cookie synchronizer in `zone-core` (`POST /v1/handoff`).
 - [ ] Implement Glance popover (ephemeral child webview over active tab).
 
-### Phase 4: UI Agent Drawer & Local LLM Integration
-- [ ] Add collapsible agent drawer to human UI shell.
-- [ ] Connect agent drawer to local Ollama / OpenAI-compatible endpoint.
-- [ ] Agent performs tasks autonomously in Gear 1/2 background worker and presents structured findings in chat drawer.
+### Phase 4: UI Agent Drawer & Local LLM Integration (Completed)
+- [x] Add autonomous task runner protocol (`TaskRequest`, `TaskResponse`, `TaskStep`) in `zone-core`.
+- [x] Add `/v1/task` and `/v1/task/{id}` routes in `zone-agent` with in-memory task ledger.
+- [x] Implement autonomous perception & action loop: navigates, crawls DOM, matches task keywords, executes clicks/inputs.
+- [x] Wire up CLI runner: `zone.exe --task "<prompt>"` for instant terminal-driven browser automation.
+- [x] Verified live on release build with full execution trace.

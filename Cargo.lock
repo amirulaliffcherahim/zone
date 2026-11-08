@@ -5867,6 +5867,7 @@ dependencies = [
  "tower",
  "tower-http",
  "tracing",
+ "uuid",
  "zone-core",
  "zone-engine-pure",
 ]
@@ -5876,6 +5877,7 @@ name = "zone-app"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "reqwest",
  "tao",
  "tokio",
  "tracing",
