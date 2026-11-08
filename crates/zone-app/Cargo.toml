@@ -1,0 +1,17 @@
+[package]
+name = "zone-app"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "zone"
+path = "src/main.rs"
+
+[dependencies]
+zone-core = { workspace = true }
+zone-engine-pure = { workspace = true }
+zone-agent = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }

@@ -1,0 +1,44 @@
+{
+  "target": "Zen Browser",
+  "version": "1.23.3b",
+  "milestone": "158.0",
+  "build_id": "20261016101044",
+  "git_stamp": "cba27b90fef1c80096c8531541efe5d7b133baae",
+  "install_path": "C:\\Program Files\\Zen Browser",
+  "analysis_timestamp": "2026-11-08T09:30:00Z",
+  "binaries": [
+    {
+      "name": "zen.exe",
+      "format": "PE32+",
+      "arch": "x86_64",
+      "size": 1264496,
+      "sha256": "01b571ed41925aab52d0d8ccc7f9d5149a379870c044136ade2293e7a3e8de4c",
+      "procedures": 1703,
+      "strings": 986,
+      "segments": 10
+    },
+    {
+      "name": "xul.dll",
+      "format": "PE32+",
+      "arch": "x86_64",
+      "size": 175971184,
+      "sha256": "9b7a5522a3f5dbc317c223c2e70c948d4e30124d4053301719b4b1783a51bbc9"
+    },
+    {
+      "name": "browser/omni.ja",
+      "format": "ZIP",
+      "size": 114221137,
+      "sha256": "2ba776cea7ccf6e1ff53e752b69dd1a21febdbd04b23062521dddea8a9351bd7",
+      "total_entries": 13531,
+      "zen_custom_entries": 976
+    }
+  ],
+  "evidence_ids": [
+    "ev_b36addf7a24edd7bba9d270db9db56d8cc6e0937d3c21d2e2085a1f6645a5c2d",
+    "ev_cf37974c6c709c44e79b84a1b84e8f1cb4b88695a430c7621fe17a3162e72c6e",
+    "ev_913615ac292d1986d36d2fdbb954c2b1fb1eb4cecae0aa70f273fe2f68e8f80b",
+    "ev_528665f65de2b5a293c4e27e25f5212a5984cac798709ecd9ec31a8d0d99af85",
+    "ev_d1f50cae2422c32a35e555ee140447fda335524e323b161e00a72aea1f90c842",
+    "ev_03512b11c7f99495f9d58319c14eac14369672c9612a640a8c10efb340c4968f"
+  ]
+}

@@ -1,0 +1,46 @@
+[workspace]
+members = [
+    "crates/zone-core",
+    "crates/zone-engine-pure",
+    "crates/zone-agent",
+    "crates/zone-app",
+]
+resolver = "2"
+
+[workspace.dependencies]
+# Internal crates
+zone-core = { path = "crates/zone-core" }
+zone-engine-pure = { path = "crates/zone-engine-pure" }
+zone-agent = { path = "crates/zone-agent" }
+
+# Async & Networking
+tokio = { version = "1.43", features = ["full"] }
+axum = { version = "0.8", features = ["ws"] }
+reqwest = { version = "0.12", features = ["cookies", "gzip", "brotli", "json"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+
+# Pure Rust HTML/DOM & JS Engine
+html5ever = "0.29"
+markup5ever_rcdom = "0.3"
+scraper = "0.22"
+taffy = "0.7"
+boa_engine = "0.20"
+boa_runtime = "0.20"
+
+# Graphics & Set-of-Marks Image Processing
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+imageproc = "0.25"
+ab_glyph = "0.2"
+base64 = "0.22"
+
+# Serialization & Utils
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow = "1.0"
+async-trait = "0.1"
+uuid = { version = "1.11", features = ["v4", "serde"] }
+url = { version = "2.5", features = ["serde"] }
+cookie_store = "0.21"

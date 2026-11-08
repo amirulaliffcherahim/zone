@@ -1,0 +1,12 @@
+[package]
+name = "zone-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+url = { workspace = true }
+cookie_store = { workspace = true }
+anyhow = { workspace = true }

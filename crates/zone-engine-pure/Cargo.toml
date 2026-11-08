@@ -1,0 +1,19 @@
+[package]
+name = "zone-engine-pure"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+zone-core = { workspace = true }
+scraper = { workspace = true }
+html5ever = { workspace = true }
+taffy = { workspace = true }
+boa_engine = { workspace = true }
+boa_runtime = { workspace = true }
+reqwest = { workspace = true }
+image = { workspace = true }
+imageproc = { workspace = true }
+ab_glyph = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+anyhow = { workspace = true }
