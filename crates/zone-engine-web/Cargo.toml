@@ -1,0 +1,15 @@
+[package]
+name = "zone-engine-web"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+zone-core = { workspace = true }
+zone-ui = { workspace = true }
+wry = "0.49"
+tao = "0.31"
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }

@@ -2,7 +2,9 @@
 members = [
     "crates/zone-core",
     "crates/zone-engine-pure",
+    "crates/zone-engine-web",
     "crates/zone-agent",
+    "crates/zone-ui",
     "crates/zone-app",
 ]
 resolver = "2"
@@ -11,7 +13,9 @@ resolver = "2"
 # Internal crates
 zone-core = { path = "crates/zone-core" }
 zone-engine-pure = { path = "crates/zone-engine-pure" }
+zone-engine-web = { path = "crates/zone-engine-web" }
 zone-agent = { path = "crates/zone-agent" }
+zone-ui = { path = "crates/zone-ui" }
 
 # Async & Networking
 tokio = { version = "1.43", features = ["full"] }

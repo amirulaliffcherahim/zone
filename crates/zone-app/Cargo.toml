@@ -9,8 +9,11 @@ path = "src/main.rs"
 
 [dependencies]
 zone-core = { workspace = true }
+zone-ui = { workspace = true }
 zone-engine-pure = { workspace = true }
+zone-engine-web = { workspace = true }
 zone-agent = { workspace = true }
+tao = "0.31"
 tokio = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
