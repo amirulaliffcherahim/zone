@@ -30,6 +30,7 @@ fn main() -> Result<()> {
         current_snapshot: Arc::new(RwLock::new(None)),
         pure_engine: pure_engine.clone(),
         active_gear: Arc::new(RwLock::new(EngineMode::PureRust)),
+        shared_cookies: Arc::new(RwLock::new(Vec::new())),
     };
 
     // Spin up background Tokio runtime for on-board AI agent daemon

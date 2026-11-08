@@ -15,7 +15,10 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::info;
-use zone_core::{ActionResult, AgentAction, DomSnapshot, EngineMode};
+use zone_core::{
+    ActionResult, AgentAction, DomSnapshot, EngineMode, HandoffDirection, HandoffRequest,
+    HandoffResponse, ZoneCookie,
+};
 use zone_engine_pure::PureEngine;
 
 #[derive(Clone)]
@@ -24,6 +27,7 @@ pub struct AgentState {
     pub current_snapshot: Arc<RwLock<Option<DomSnapshot>>>,
     pub pure_engine: Arc<PureEngine>,
     pub active_gear: Arc<RwLock<EngineMode>>,
+    pub shared_cookies: Arc<RwLock<Vec<ZoneCookie>>>,
 }
 
 #[derive(Serialize)]
@@ -62,6 +66,7 @@ pub fn create_agent_router(state: AgentState) -> Router {
         .route("/v1/screenshot", get(screenshot_handler))
         .route("/v1/act", post(action_handler))
         .route("/v1/navigate", post(navigate_handler))
+        .route("/v1/handoff", post(handoff_handler))
         .with_state(state)
 }
 
@@ -256,10 +261,125 @@ async fn action_handler(
     }
 }
 
+async fn handoff_handler(
+    State(state): State<AgentState>,
+    Json(payload): Json<HandoffRequest>,
+) -> Json<HandoffResponse> {
+    info!("Handling session handoff request: {:?}", payload.direction);
+    match payload.direction {
+        HandoffDirection::ToAgent => {
+            let cookie_count = payload.cookies.len();
+            let mut cookies_guard = state.shared_cookies.write().await;
+            *cookies_guard = payload.cookies;
+
+            if let Some(url) = payload.url {
+                *state.current_url.write().await = url.clone();
+                if let Ok((snapshot, needs_escalation)) = state.pure_engine.load_and_parse(&url).await {
+                    *state.current_snapshot.write().await = Some(snapshot);
+                    if needs_escalation {
+                        *state.active_gear.write().await = EngineMode::WebView2;
+                    }
+                }
+                Json(HandoffResponse {
+                    success: true,
+                    message: format!("Session handed off to agent. Ingested {} cookies and loaded {}", cookie_count, url),
+                    synced_cookies: cookie_count,
+                    url: Some(url),
+                })
+            } else {
+                Json(HandoffResponse {
+                    success: true,
+                    message: format!("Ingested {} session cookies into agent worker", cookie_count),
+                    synced_cookies: cookie_count,
+                    url: None,
+                })
+            }
+        }
+        HandoffDirection::ToHuman => {
+            let current_url = state.current_url.read().await.clone();
+            let cookies = state.shared_cookies.read().await.clone();
+            Json(HandoffResponse {
+                success: true,
+                message: "Exported agent session to human window".to_string(),
+                synced_cookies: cookies.len(),
+                url: Some(current_url),
+            })
+        }
+    }
+}
+
 pub async fn start_agent_server(addr: SocketAddr, state: AgentState) -> Result<()> {
     let app = create_agent_router(state);
     info!("Zone Browser Agent daemon listening on http://{}", addr);
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app).await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_handoff_cookies() {
+        let state = AgentState {
+            current_url: Arc::new(RwLock::new("https://example.com".to_string())),
+            current_snapshot: Arc::new(RwLock::new(None)),
+            pure_engine: Arc::new(PureEngine::new(1280, 800)),
+            active_gear: Arc::new(RwLock::new(EngineMode::PureRust)),
+            shared_cookies: Arc::new(RwLock::new(Vec::new())),
+        };
+
+        let req = HandoffRequest {
+            direction: HandoffDirection::ToAgent,
+            url: Some("https://example.com".to_string()),
+            cookies: vec![ZoneCookie {
+                name: "session_id".to_string(),
+                value: "xyz123".to_string(),
+                domain: "example.com".to_string(),
+                path: "/".to_string(),
+                secure: true,
+                http_only: true,
+            }],
+        };
+
+        let res = handoff_handler(State(state.clone()), Json(req)).await;
+        assert!(res.0.success);
+        assert_eq!(res.0.synced_cookies, 1);
+
+        // Verify stored in state
+        let stored = state.shared_cookies.read().await;
+        assert_eq!(stored.len(), 1);
+        assert_eq!(stored[0].name, "session_id");
+        assert_eq!(stored[0].value, "xyz123");
+    }
+
+    #[tokio::test]
+    async fn test_handoff_export_to_human() {
+        let state = AgentState {
+            current_url: Arc::new(RwLock::new("https://news.ycombinator.com".to_string())),
+            current_snapshot: Arc::new(RwLock::new(None)),
+            pure_engine: Arc::new(PureEngine::new(1280, 800)),
+            active_gear: Arc::new(RwLock::new(EngineMode::PureRust)),
+            shared_cookies: Arc::new(RwLock::new(vec![ZoneCookie {
+                name: "user".to_string(),
+                value: "alice".to_string(),
+                domain: "ycombinator.com".to_string(),
+                path: "/".to_string(),
+                secure: true,
+                http_only: false,
+            }])),
+        };
+
+        let req = HandoffRequest {
+            direction: HandoffDirection::ToHuman,
+            url: None,
+            cookies: vec![],
+        };
+
+        let res = handoff_handler(State(state), Json(req)).await;
+        assert!(res.0.success);
+        assert_eq!(res.0.synced_cookies, 1);
+        assert_eq!(res.0.url, Some("https://news.ycombinator.com".to_string()));
+    }
 }

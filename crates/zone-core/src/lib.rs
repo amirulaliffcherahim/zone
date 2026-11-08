@@ -141,3 +141,53 @@ pub struct Space {
     pub tabs: Vec<TabId>,
     pub active_tab: Option<TabId>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ZoneCookie {
+    pub name: String,
+    pub value: String,
+    pub domain: String,
+    pub path: String,
+    pub secure: bool,
+    pub http_only: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum HandoffDirection {
+    ToAgent,
+    ToHuman,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HandoffRequest {
+    pub direction: HandoffDirection,
+    pub url: Option<String>,
+    #[serde(default)]
+    pub cookies: Vec<ZoneCookie>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HandoffResponse {
+    pub success: bool,
+    pub message: String,
+    pub synced_cookies: usize,
+    pub url: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GlanceConfig {
+    pub width: f32,
+    pub height: f32,
+    pub scale: f32, // e.g. 0.95
+}
+
+impl Default for GlanceConfig {
+    fn default() -> Self {
+        Self {
+            width: 800.0,
+            height: 600.0,
+            scale: 0.95,
+        }
+    }
+}

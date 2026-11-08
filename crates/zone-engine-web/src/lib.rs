@@ -5,7 +5,10 @@ use tao::dpi::{PhysicalPosition, PhysicalSize};
 use tao::window::Window;
 use tracing::info;
 use wry::{Rect, WebView, WebViewBuilder};
-use zone_core::{BoundingBox, DomSnapshot, EngineMode, InteractiveElement, SplitNode, TabId};
+use zone_core::{
+    BoundingBox, DomSnapshot, EngineMode, GlanceConfig, InteractiveElement, SplitNode, TabId,
+    ZoneCookie,
+};
 use zone_ui::{LayoutRect, SplitLayoutEngine};
 
 pub const DOM_EXTRACTOR_JS: &str = r#"
@@ -62,6 +65,7 @@ pub struct WebTab {
 pub struct WebViewController {
     tabs: HashMap<TabId, WebTab>,
     latest_dom: Arc<Mutex<Option<DomSnapshot>>>,
+    glance: Option<WebView>,
 }
 
 impl WebViewController {
@@ -69,6 +73,7 @@ impl WebViewController {
         Self {
             tabs: HashMap::new(),
             latest_dom: Arc::new(Mutex::new(None)),
+            glance: None,
         }
     }
 
@@ -175,6 +180,64 @@ impl WebViewController {
     pub fn request_dom_extraction(&self, tab_id: TabId) {
         if let Some(tab) = self.tabs.get(&tab_id) {
             let _ = tab.webview.evaluate_script("window.__zoneExtractDom && window.__zoneExtractDom();");
+        }
+    }
+
+    /// Opens an ephemeral Glance peek preview overlay on top of active content
+    pub fn open_glance(
+        &mut self,
+        window: &Window,
+        url: &str,
+        parent_width: u32,
+        parent_height: u32,
+        config: Option<GlanceConfig>,
+    ) -> Result<()> {
+        let cfg = config.unwrap_or_default();
+        let glance_w = (parent_width as f32 * cfg.scale).min(cfg.width) as u32;
+        let glance_h = (parent_height as f32 * cfg.scale).min(cfg.height) as u32;
+
+        let pos_x = (parent_width.saturating_sub(glance_w)) / 2;
+        let pos_y = (parent_height.saturating_sub(glance_h)) / 2;
+
+        let rect = Rect {
+            position: PhysicalPosition::new(pos_x as i32, pos_y as i32).into(),
+            size: PhysicalSize::new(glance_w, glance_h).into(),
+        };
+
+        info!("Opening Glance peek overlay for '{}' at ({}, {}) [{}x{}]", url, pos_x, pos_y, glance_w, glance_h);
+
+        let webview = WebViewBuilder::new()
+            .with_bounds(rect)
+            .with_url(url)
+            .build_as_child(window)?;
+
+        self.glance = Some(webview);
+        Ok(())
+    }
+
+    /// Closes the active Glance peek preview
+    pub fn close_glance(&mut self) {
+        if self.glance.is_some() {
+            info!("Closing Glance peek overlay");
+            self.glance = None;
+        }
+    }
+
+    /// Injects session cookies into a given tab
+    pub fn inject_cookies(&self, tab_id: TabId, cookies: &[ZoneCookie]) {
+        if let Some(tab) = self.tabs.get(&tab_id) {
+            for cookie in cookies {
+                let script = format!(
+                    "document.cookie = '{}={}; path={}; domain={}{}';",
+                    cookie.name,
+                    cookie.value,
+                    cookie.path,
+                    cookie.domain,
+                    if cookie.secure { "; Secure" } else { "" }
+                );
+                let _ = tab.webview.evaluate_script(&script);
+            }
+            info!("Injected {} cookies into tab {:?}", cookies.len(), tab_id);
         }
     }
 }
