@@ -100,16 +100,17 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
-    // Zen Browser UI: Left Chrome Sidebar (244px) + Framed Content WebViews
+    // Zen Browser UI: Left Chrome Sidebar (230px) + Framed Content WebViews
     let event_loop = EventLoopBuilder::<ChromeCommand>::with_user_event().build();
     let proxy = event_loop.create_proxy();
 
     let window = WindowBuilder::new()
-        .with_title("Zone")
+        .with_title("Zen")
+        .with_theme(Some(tao::window::Theme::Dark))
         .with_inner_size(LogicalSize::new(1280.0, 820.0))
         .build(&event_loop)?;
 
-    let sidebar_width = 244u32;
+    let sidebar_width = 230u32;
     let mut controller = WebViewController::new(sidebar_width);
 
     let initial_size = window.inner_size();

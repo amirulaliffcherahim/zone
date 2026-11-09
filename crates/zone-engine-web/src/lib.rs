@@ -171,7 +171,7 @@ impl WebViewController {
             sidebar_width,
             window_size: (1280, 800),
             proxy: None,
-            active_workspace: "Default Workspace".to_string(),
+            active_workspace: "Personal".to_string(),
         }
     }
 
@@ -181,10 +181,12 @@ impl WebViewController {
 
     pub fn content_bounds(&self) -> LayoutRect {
         let (w, h) = self.window_size;
-        let content_x = self.sidebar_width as f32;
-        let content_w = (w.saturating_sub(self.sidebar_width)).max(100) as f32;
-        let content_h = h.max(100) as f32;
-        LayoutRect::new(content_x, 0.0, content_w, content_h)
+        let pad = 6.0f32; // Zen floating card padding
+        let content_x = self.sidebar_width as f32 + pad;
+        let content_y = pad;
+        let content_w = (w as f32 - content_x - pad).max(100.0);
+        let content_h = (h as f32 - (pad * 2.0)).max(100.0);
+        LayoutRect::new(content_x, content_y, content_w, content_h)
     }
 
     /// Creates the dedicated Zen Chrome Sidebar WebView at x=0 with trusted IPC

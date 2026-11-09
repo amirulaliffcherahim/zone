@@ -6,40 +6,27 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
 <title>Zen Browser</title>
 <style>
   :root {
-    --zen-bg-light: #e6e4e2;
-    --zen-bg-dark: #1b1b1b;
-    --zen-surface-light: rgba(255, 255, 255, 0.58);
-    --zen-surface-dark: rgba(255, 255, 255, 0.08);
-    --zen-surface-hover-light: rgba(0, 0, 0, 0.055);
-    --zen-surface-hover-dark: rgba(255, 255, 255, 0.06);
-    --zen-active-tab-light: #ffffff;
-    --zen-active-tab-dark: rgba(255, 255, 255, 0.14);
-    --zen-text-light: #1c1c1e;
-    --zen-text-dark: #f0f0f2;
-    --zen-muted-light: rgba(28, 28, 30, 0.52);
-    --zen-muted-dark: rgba(240, 240, 242, 0.52);
-    --zen-separator-light: rgba(0, 0, 0, 0.08);
-    --zen-separator-dark: rgba(255, 255, 255, 0.08);
-    --zen-shadow-tab: 0 1px 2.5px rgba(0, 0, 0, 0.08);
-    --zen-shadow-content: 0 3px 10px rgba(0, 0, 0, 0.14);
-
-    --bg: var(--zen-bg-dark);
-    --surface: var(--zen-surface-dark);
-    --surface-hover: var(--zen-surface-hover-dark);
-    --active-tab: var(--zen-active-tab-dark);
-    --text: var(--zen-text-dark);
-    --muted: var(--zen-muted-dark);
-    --separator: var(--zen-separator-dark);
+    --zen-bg: #18181a;
+    --zen-surface: rgba(255, 255, 255, 0.055);
+    --zen-surface-hover: rgba(255, 255, 255, 0.09);
+    --zen-surface-active: #2a2a2e;
+    --zen-border: rgba(255, 255, 255, 0.07);
+    --zen-text: #f0f0f2;
+    --zen-muted: rgba(240, 240, 242, 0.45);
+    --zen-accent: #8b5cf6;
+    --zen-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
   }
 
   [data-theme="light"] {
-    --bg: var(--zen-bg-light);
-    --surface: var(--zen-surface-light);
-    --surface-hover: var(--zen-surface-hover-light);
-    --active-tab: var(--zen-active-tab-light);
-    --text: var(--zen-text-light);
-    --muted: var(--zen-muted-light);
-    --separator: var(--zen-separator-light);
+    --zen-bg: #e5e3e1;
+    --zen-surface: rgba(255, 255, 255, 0.65);
+    --zen-surface-hover: rgba(0, 0, 0, 0.06);
+    --zen-surface-active: #ffffff;
+    --zen-border: rgba(0, 0, 0, 0.07);
+    --zen-text: #1c1c1e;
+    --zen-muted: rgba(28, 28, 30, 0.5);
+    --zen-accent: #7c3aed;
+    --zen-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 
   * {
@@ -51,28 +38,29 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
   }
 
   body {
-    background: var(--bg);
-    color: var(--text);
+    background: var(--zen-bg);
+    color: var(--zen-text);
     font-family: "Segoe UI Variable Text", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 13px;
+    font-size: 12.5px;
     width: 100vw;
     height: 100vh;
     overflow: hidden;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
   }
 
   .sidebar {
     width: 100vw;
     height: 100vh;
-    padding: 8px 10px 10px 10px;
+    padding: 7px 8px 8px 8px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 7px;
   }
 
+  /* Row 1: Zen Top Bar */
   .top-bar {
-    height: 30px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -82,7 +70,7 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
   .top-left, .top-right {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 1px;
   }
 
   .drag-spacer {
@@ -92,22 +80,22 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
   }
 
   .icon-btn {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     border-radius: 6px;
     border: none;
     background: transparent;
-    color: var(--text);
+    color: var(--zen-text);
     opacity: 0.65;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: background-color 0.1s ease, opacity 0.1s ease, transform 0.1s ease;
+    transition: background-color 0.1s ease, opacity 0.1s ease, transform 0.08s ease;
   }
 
   .icon-btn:hover {
-    background: var(--surface-hover);
+    background: var(--zen-surface-hover);
     opacity: 1;
   }
 
@@ -116,63 +104,57 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
   }
 
   .icon-btn svg {
-    width: 15px;
-    height: 15px;
+    width: 14px;
+    height: 14px;
     fill: currentColor;
   }
 
   .zen-dots-btn {
-    position: relative;
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     border-radius: 6px;
     border: none;
     background: transparent;
-    color: var(--text);
+    color: var(--zen-text);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    opacity: 0.65;
   }
   .zen-dots-btn:hover {
-    background: var(--surface-hover);
-  }
-  .zen-dots-status {
-    position: absolute;
-    top: 5px;
-    right: 4px;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #10b981;
+    background: var(--zen-surface-hover);
+    opacity: 1;
   }
 
+  /* Row 2: Zen Omnibox Pill */
   .urlbar-wrapper {
     position: relative;
     width: 100%;
-    height: 36px;
-    background: var(--surface);
-    border-radius: 10px;
+    height: 33px;
+    background: var(--zen-surface);
+    border-radius: 8px;
     display: flex;
     align-items: center;
-    padding: 0 10px;
-    gap: 8px;
-    transition: background-color 0.12s ease, box-shadow 0.12s ease;
+    padding: 0 9px;
+    gap: 7px;
+    border: 1px solid var(--zen-border);
+    transition: background-color 0.12s ease, border-color 0.12s ease;
   }
 
   .urlbar-wrapper:hover {
-    background: color-mix(in srgb, var(--surface) 92%, var(--text) 8%);
+    background: var(--zen-surface-hover);
   }
 
   .urlbar-wrapper:focus-within {
-    background: var(--active-tab);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 0 0 1.5px rgba(0, 0, 0, 0.12);
+    background: var(--zen-surface-active);
+    border-color: var(--zen-accent);
   }
 
   .urlbar-icon {
-    width: 14px;
-    height: 14px;
-    color: var(--muted);
+    width: 13px;
+    height: 13px;
+    color: var(--zen-muted);
     flex-shrink: 0;
     display: flex;
     align-items: center;
@@ -180,8 +162,8 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
   }
 
   .urlbar-icon svg {
-    width: 14px;
-    height: 14px;
+    width: 13px;
+    height: 13px;
     fill: currentColor;
   }
 
@@ -189,102 +171,132 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
     width: 100%;
     border: none;
     background: transparent;
-    color: var(--text);
+    color: var(--zen-text);
     font-family: inherit;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 450;
     outline: none;
   }
 
   .urlbar-input::placeholder {
-    color: var(--muted);
+    color: var(--zen-muted);
   }
 
+  /* Row 3: 4-Column Essentials Row */
   .essentials-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
     width: 100%;
   }
 
   .essential-tile {
-    height: 44px;
-    border-radius: 10px;
-    background: var(--surface);
-    border: none;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--zen-surface);
+    border: 1px solid var(--zen-border);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: background-color 0.12s ease, transform 0.1s ease;
+    transition: background-color 0.1s ease, transform 0.08s ease;
   }
 
   .essential-tile:hover {
-    background: var(--active-tab);
+    background: var(--zen-surface-hover);
+    transform: translateY(-1px);
   }
 
   .essential-tile:active {
-    transform: scale(0.97);
+    transform: scale(0.95);
   }
 
-  .essential-tile img, .essential-tile svg {
-    width: 18px;
-    height: 18px;
-    border-radius: 4px;
+  .essential-tile svg {
+    width: 16px;
+    height: 16px;
   }
 
+  /* Row 4: Workspace Indicator Header */
   .workspace-header {
     display: flex;
     align-items: center;
-    gap: 7px;
-    padding: 6px 8px 2px 8px;
-    color: var(--muted);
-    font-size: 12px;
-    font-weight: 600;
+    justify-content: space-between;
+    padding: 4px 6px 2px 6px;
+    color: var(--zen-muted);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
     cursor: pointer;
     border-radius: 6px;
   }
 
   .workspace-header:hover {
-    color: var(--text);
+    color: var(--zen-text);
+  }
+
+  .workspace-header-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
 
   .workspace-header svg {
-    width: 13px;
-    height: 13px;
+    width: 12px;
+    height: 12px;
     fill: currentColor;
   }
 
+  /* Row 5: Vertical Tab List */
   .tabs-section {
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: 2px;
     overflow-y: auto;
-    padding-top: 2px;
+    padding-top: 1px;
   }
 
   .tab-row {
-    height: 34px;
-    padding: 0 9px;
-    border-radius: 8px;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: 7px;
     display: flex;
     align-items: center;
-    gap: 9px;
-    color: var(--text);
+    gap: 8px;
+    color: var(--zen-muted);
     cursor: pointer;
-    transition: background-color 0.1s ease;
+    transition: background-color 0.1s ease, color 0.1s ease;
     position: relative;
+    border: 1px solid transparent;
   }
 
   .tab-row:hover {
-    background: var(--surface-hover);
+    background: var(--zen-surface-hover);
+    color: var(--zen-text);
   }
 
   .tab-row.active {
-    background: var(--active-tab);
-    box-shadow: var(--zen-shadow-tab);
+    background: var(--zen-surface-active);
+    color: var(--zen-text);
     font-weight: 500;
+    border-color: var(--zen-border);
+    box-shadow: var(--zen-shadow);
+  }
+
+  .tab-indicator {
+    position: absolute;
+    left: 0;
+    top: 7px;
+    bottom: 7px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--zen-accent);
+    display: none;
+  }
+
+  .tab-row.active .tab-indicator {
+    display: block;
   }
 
   .tab-favicon {
@@ -305,8 +317,8 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
   }
 
   .tab-favicon svg {
-    width: 15px;
-    height: 15px;
+    width: 14px;
+    height: 14px;
     fill: currentColor;
     opacity: 0.7;
   }
@@ -316,16 +328,16 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .tab-close {
-    width: 20px;
-    height: 20px;
-    border-radius: 5px;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
     border: none;
     background: transparent;
-    color: var(--muted);
+    color: var(--zen-muted);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -336,125 +348,135 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
 
   .tab-row:hover .tab-close,
   .tab-row.active .tab-close {
-    opacity: 0.8;
+    opacity: 0.75;
   }
 
   .tab-close:hover {
     opacity: 1 !important;
-    background: var(--surface-hover);
-    color: var(--text);
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--zen-text);
   }
 
   .tab-close svg {
-    width: 12px;
-    height: 12px;
+    width: 11px;
+    height: 11px;
     fill: currentColor;
   }
 
   .tabs-divider {
     height: 1px;
-    background: var(--separator);
-    margin: 5px 6px;
+    background: var(--zen-border);
+    margin: 4px 4px;
   }
 
   .new-tab-row {
-    height: 34px;
-    padding: 0 9px;
-    border-radius: 8px;
+    height: 30px;
+    padding: 0 8px;
+    border-radius: 7px;
     display: flex;
     align-items: center;
-    gap: 9px;
-    color: var(--text);
-    opacity: 0.75;
+    gap: 8px;
+    color: var(--zen-muted);
     cursor: pointer;
     border: none;
     background: transparent;
     font-family: inherit;
-    font-size: 13px;
+    font-size: 12px;
     width: 100%;
     text-align: left;
-    transition: background-color 0.1s ease, opacity 0.1s ease;
+    transition: background-color 0.1s ease, color 0.1s ease;
   }
 
   .new-tab-row:hover {
-    background: var(--surface-hover);
-    opacity: 1;
+    background: var(--zen-surface-hover);
+    color: var(--zen-text);
   }
 
   .new-tab-row svg {
-    width: 15px;
-    height: 15px;
+    width: 14px;
+    height: 14px;
     fill: currentColor;
   }
 
-  .sidebar-footer {
+  /* Row 6: Zen Workspaces Dock at Bottom */
+  .spaces-dock {
+    display: flex;
+    gap: 4px;
+    padding-top: 4px;
+    border-top: 1px solid var(--zen-border);
+  }
+
+  .space-chip {
+    flex: 1;
     height: 28px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--zen-muted);
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 4px;
-    margin-top: auto;
-  }
-
-  .workspace-dots {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .ws-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--muted);
-    opacity: 0.45;
-    border: none;
+    justify-content: center;
+    gap: 4px;
     cursor: pointer;
-    transition: opacity 0.15s ease, transform 0.15s ease;
+    transition: background-color 0.1s ease, color 0.1s ease;
   }
 
-  .ws-dot.active {
-    opacity: 1;
-    background: var(--text);
-    transform: scale(1.2);
+  .space-chip:hover {
+    background: var(--zen-surface-hover);
+    color: var(--zen-text);
+  }
+
+  .space-chip.active {
+    background: var(--zen-surface);
+    color: var(--zen-text);
+    border-color: var(--zen-border);
+  }
+
+  .space-chip svg {
+    width: 12px;
+    height: 12px;
   }
 </style>
 </head>
 <body>
   <aside class="sidebar">
-    <div class="top-bar" id="topDragBar">
+    <!-- Top Row: Dots, Split View, Drag Spacer, Nav -->
+    <div class="top-bar">
       <div class="top-left">
-        <button class="zen-dots-btn" id="btnToggleTheme" title="Switch Light/Dark Theme">
+        <button class="zen-dots-btn" id="btnToggleTheme" title="Toggle Light/Dark Theme">
           <svg viewBox="0 0 18 18" width="16" height="16" fill="currentColor">
             <circle cx="4" cy="9" r="1.5"/>
             <circle cx="9" cy="9" r="1.5"/>
             <circle cx="14" cy="9" r="1.5"/>
           </svg>
-          <span class="zen-dots-status" title="Background Agent Ready"></span>
         </button>
-        <button class="icon-btn" id="btnSplitView" title="Toggle Split View">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18"><path d="M13.25 2A2.75 2.75 0 0 1 16 4.75v8.5A2.75 2.75 0 0 1 13.25 16h-8.5A2.75 2.75 0 0 1 2 13.25v-8.5A2.75 2.75 0 0 1 4.75 2zm-3.5 12.5h3.5c.69 0 1.25-.56 1.25-1.25v-8.5c0-.69-.56-1.25-1.25-1.25h-3.5zm-5-11c-.69 0-1.25.56-1.25 1.25v8.5c0 .69.56 1.25 1.25 1.25h3.5v-11z"/></svg>
+        <button class="icon-btn" id="btnSplitView" title="Toggle 2-Way Split View">
+          <svg viewBox="0 0 18 18"><path d="M13.25 2A2.75 2.75 0 0 1 16 4.75v8.5A2.75 2.75 0 0 1 13.25 16h-8.5A2.75 2.75 0 0 1 2 13.25v-8.5A2.75 2.75 0 0 1 4.75 2zm-3.5 12.5h3.5c.69 0 1.25-.56 1.25-1.25v-8.5c0-.69-.56-1.25-1.25-1.25h-3.5zm-5-11c-.69 0-1.25.56-1.25 1.25v8.5c0 .69.56 1.25 1.25 1.25h3.5v-11z"/></svg>
         </button>
       </div>
 
-      <div class="drag-spacer" id="dragSpacer"></div>
+      <div class="drag-spacer"></div>
 
       <div class="top-right">
         <button class="icon-btn" id="btnBack" title="Back (Alt+Left)">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18"><path d="M7.47 3.22a.75.75 0 1 1 1.06 1.06L4.56 8.25h10.69a.75.75 0 0 1 0 1.5H4.56l3.97 3.97a.75.75 0 1 1-1.06 1.06L2.22 9.53a.75.75 0 0 1-.165-.812l.004-.01q.018-.04.042-.078a.8.8 0 0 1 .119-.16z"/></svg>
+          <svg viewBox="0 0 18 18"><path d="M7.47 3.22a.75.75 0 1 1 1.06 1.06L4.56 8.25h10.69a.75.75 0 0 1 0 1.5H4.56l3.97 3.97a.75.75 0 1 1-1.06 1.06L2.22 9.53a.75.75 0 0 1-.165-.812l.004-.01q.018-.04.042-.078a.8.8 0 0 1 .119-.16z"/></svg>
         </button>
         <button class="icon-btn" id="btnForward" title="Forward (Alt+Right)">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18"><path d="M9.47 3.22a.75.75 0 0 1 1.06 0l5.25 5.25a.8.8 0 0 1 .118.16q.025.04.044.083a.75.75 0 0 1-.078.715 1 1 0 0 1-.084.102l-5.25 5.25a.75.75 0 1 1-1.06-1.06l3.97-3.97H2.75a.75.75 0 0 1 0-1.5h10.69L9.47 4.28a.75.75 0 0 1 0-1.06"/></svg>
+          <svg viewBox="0 0 18 18"><path d="M9.47 3.22a.75.75 0 0 1 1.06 0l5.25 5.25a.8.8 0 0 1 .118.16q.025.04.044.083a.75.75 0 0 1-.078.715 1 1 0 0 1-.084.102l-5.25 5.25a.75.75 0 1 1-1.06-1.06l3.97-3.97H2.75a.75.75 0 0 1 0-1.5h10.69L9.47 4.28a.75.75 0 0 1 0-1.06"/></svg>
         </button>
         <button class="icon-btn" id="btnReload" title="Reload (Ctrl+R)">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18"><path d="M9 1a7.98 7.98 0 0 1 6.263 3.025l.115-.823a.75.75 0 0 1 1.485.205l-.408 2.946a.75.75 0 0 1-.846.64l-2.943-.407a.75.75 0 0 1 .205-1.486l1.475.203a6.5 6.5 0 1 0 1.151 3.879.75.75 0 0 1 1.5.042A8 8 0 1 1 9 1"/></svg>
+          <svg viewBox="0 0 18 18"><path d="M9 1a7.98 7.98 0 0 1 6.263 3.025l.115-.823a.75.75 0 0 1 1.485.205l-.408 2.946a.75.75 0 0 1-.846.64l-2.943-.407a.75.75 0 0 1 .205-1.486l1.475.203a6.5 6.5 0 1 0 1.151 3.879.75.75 0 0 1 1.5.042A8 8 0 1 1 9 1"/></svg>
         </button>
       </div>
     </div>
 
+    <!-- Omnibox Search -->
     <div class="urlbar-wrapper">
       <div class="urlbar-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18"><path d="M7.75 1.5A6.25 6.25 0 0 1 14 7.75a6.22 6.22 0 0 1-1.334 3.855l3.614 3.615a.75.75 0 0 1-1.06 1.06l-3.615-3.614A6.22 6.22 0 0 1 7.75 14a6.25 6.25 0 0 1 0-12.5m0 1.5a4.75 4.75 0 1 0 0 9.5 4.75 4.75 0 0 0 0-9.5"/></svg>
+        <svg viewBox="0 0 18 18"><path d="M7.75 1.5A6.25 6.25 0 0 1 14 7.75a6.22 6.22 0 0 1-1.334 3.855l3.614 3.615a.75.75 0 0 1-1.06 1.06l-3.615-3.614A6.22 6.22 0 0 1 7.75 14a6.25 6.25 0 0 1 0-12.5m0 1.5a4.75 4.75 0 1 0 0 9.5 4.75 4.75 0 0 0 0-9.5"/></svg>
       </div>
       <input
         type="text"
@@ -466,35 +488,55 @@ pub const CHROME_HTML: &str = r####"<!DOCTYPE html>
       />
     </div>
 
+    <!-- Essentials: 4 Icons Row -->
     <div class="essentials-grid">
-      <button class="essential-tile" data-url="https://github.com/amirulaliffcherahim" title="GitHub">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+      <button class="essential-tile" data-url="https://github.com/amirulaliffcherahim/zone" title="GitHub">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
       </button>
       <button class="essential-tile" data-url="https://news.ycombinator.com" title="Hacker News">
-        <svg viewBox="0 0 24 24" width="18" height="18"><rect width="24" height="24" rx="4" fill="#ff6600"/><path d="M7 6h2.2l2.8 5.6L14.8 6H17l-4 7.5V18h-2v-4.5L7 6z" fill="#fff"/></svg>
+        <svg viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="4" fill="#ff6600"/><path d="M7 6h2.2l2.8 5.6L14.8 6H17l-4 7.5V18h-2v-4.5L7 6z" fill="#fff"/></svg>
+      </button>
+      <button class="essential-tile" data-url="https://www.google.com" title="Search">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14.93V17a1 1 0 0 1-2 0v-.07A8 8 0 0 1 4.07 11H5a1 1 0 0 1 0 2h-.93A8 8 0 0 1 11 4.07V5a1 1 0 0 1 2 0v-.93A8 8 0 0 1 19.93 11H19a1 1 0 0 1 0-2h.93A8 8 0 0 1 13 16.93z"/></svg>
+      </button>
+      <button class="essential-tile" data-url="https://crates.io" title="Rust Crates">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 7.28V5.12a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4a2 2 0 0 0-1 1.73v13.76a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73V16.7l-4 2.31V21l-5 2.86L4 21V7.57L9 10.4v3.46l3 1.74 3-1.74V10.4l5-2.83z"/></svg>
       </button>
     </div>
 
-    <div class="workspace-header" id="workspaceHeader">
-      <svg viewBox="0 0 512 512"><path d="M 496,152 A 56,56 0 0 0 440,96 H 220.11 A 23.89,23.89 0 0 1 206.8,92 L 179,73.41 A 55.77,55.77 0 0 0 147.89,64 H 72 a 56,56 0 0 0 -56,56 v 48 a 8,8 0 0 0 8,8 h 464 a 8,8 0 0 0 8,-8 z M 16,392 a 56,56 0 0 0 56,56 h 368 a 56,56 0 0 0 56,-56 V 216 a 8,8 0 0 0 -8,-8 H 24 a 8,8 0 0 0 -8,8 z"/></svg>
-      <span id="workspaceName">Default Workspace</span>
+    <!-- Workspace Header -->
+    <div class="workspace-header">
+      <div class="workspace-header-left">
+        <svg viewBox="0 0 512 512"><path d="M 496,152 A 56,56 0 0 0 440,96 H 220.11 A 23.89,23.89 0 0 1 206.8,92 L 179,73.41 A 55.77,55.77 0 0 0 147.89,64 H 72 a 56,56 0 0 0 -56,56 v 48 a 8,8 0 0 0 8,8 h 464 a 8,8 0 0 0 8,-8 z M 16,392 a 56,56 0 0 0 56,56 h 368 a 56,56 0 0 0 56,-56 V 216 a 8,8 0 0 0 -8,-8 H 24 a 8,8 0 0 0 -8,8 z"/></svg>
+        <span id="workspaceName">Personal</span>
+      </div>
+      <span>▾</span>
     </div>
 
+    <!-- Vertical Tabs -->
     <div class="tabs-section">
       <div id="tabList"></div>
       <div class="tabs-divider"></div>
       <button class="new-tab-row" id="btnNewTab">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18"><path d="M9 2.5a.75.75 0 0 1 .75.75v5h5a.75.75 0 0 1 0 1.5h-5v5a.75.75 0 0 1-1.5 0v-5h-5a.75.75 0 0 1 0-1.5h5v-5A.75.75 0 0 1 9 2.5"/></svg>
+        <svg viewBox="0 0 18 18"><path d="M9 2.5a.75.75 0 0 1 .75.75v5h5a.75.75 0 0 1 0 1.5h-5v5a.75.75 0 0 1-1.5 0v-5h-5a.75.75 0 0 1 0-1.5h5v-5A.75.75 0 0 1 9 2.5"/></svg>
         <span>New Tab</span>
       </button>
     </div>
 
-    <div class="sidebar-footer">
-      <div class="workspace-dots">
-        <button class="ws-dot active" data-ws="Default Workspace" title="Default Workspace"></button>
-        <button class="ws-dot" data-ws="Work" title="Work"></button>
-        <button class="ws-dot" data-ws="Research" title="Research"></button>
-      </div>
+    <!-- Workspaces Dock at Bottom -->
+    <div class="spaces-dock">
+      <button class="space-chip active" data-ws="Personal">
+        <svg viewBox="0 0 18 18"><circle cx="9" cy="9" r="7.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 9h15M9 1.5C6.5 4 5 6.5 5 9s1.5 5 4 7.5c2.5-2.5 4-5 4-7.5s-1.5-5-4-7.5z" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Personal</span>
+      </button>
+      <button class="space-chip" data-ws="Work">
+        <svg viewBox="0 0 18 18"><rect x="2" y="5" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M6 5V3.5a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 12 3.5V5" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Work</span>
+      </button>
+      <button class="space-chip" data-ws="Dev">
+        <svg viewBox="0 0 18 18"><path d="M6 5L2 9l4 4M12 5l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Dev</span>
+      </button>
     </div>
   </aside>
 </body>
@@ -542,11 +584,11 @@ pub const CHROME_JS: &str = r####"
 
     if (state.active_workspace && workspaceName) {
       workspaceName.textContent = state.active_workspace;
-      document.querySelectorAll('.ws-dot').forEach(d => {
-        if (d.getAttribute('data-ws') === state.active_workspace) {
-          d.classList.add('active');
+      document.querySelectorAll('.space-chip').forEach(chip => {
+        if (chip.getAttribute('data-ws') === state.active_workspace) {
+          chip.classList.add('active');
         } else {
-          d.classList.remove('active');
+          chip.classList.remove('active');
         }
       });
     }
@@ -562,6 +604,9 @@ pub const CHROME_JS: &str = r####"
         const row = document.createElement('div');
         row.className = 'tab-row' + (t.id === state.active_tab_id ? ' active' : '');
         row.onclick = () => postMsg('switch_tab', { id: t.id });
+
+        const indicator = document.createElement('div');
+        indicator.className = 'tab-indicator';
 
         const fav = document.createElement('div');
         fav.className = 'tab-favicon';
@@ -588,6 +633,7 @@ pub const CHROME_JS: &str = r####"
           postMsg('close_tab', { id: t.id });
         };
 
+        row.appendChild(indicator);
         row.appendChild(fav);
         row.appendChild(title);
         row.appendChild(closeBtn);
@@ -624,9 +670,9 @@ pub const CHROME_JS: &str = r####"
       };
     });
 
-    document.querySelectorAll('.ws-dot').forEach(dot => {
-      dot.onclick = () => {
-        const name = dot.getAttribute('data-ws');
+    document.querySelectorAll('.space-chip').forEach(chip => {
+      chip.onclick = () => {
+        const name = chip.getAttribute('data-ws');
         postMsg('switch_workspace', { name: name });
       };
     });
