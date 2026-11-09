@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex};
 use tao::dpi::{PhysicalPosition, PhysicalSize};
 use tao::event_loop::EventLoopProxy;
 use tao::window::Window;
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 use wry::{PageLoadEvent, Rect, WebView, WebViewBuilder};
 use zone_core::{
     BoundingBox, DomSnapshot, EngineMode, GlanceConfig, InteractiveElement, SplitDirection,
